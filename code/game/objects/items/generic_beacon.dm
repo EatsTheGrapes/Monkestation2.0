@@ -27,7 +27,7 @@
 	name = "jukebox beacon"
 	desc = "N.T. jukebox beacon, toss it down and you will have a complementary jukebox delivered to you. It comes with a free wrench to move it after deployment."
 	icon_state = "music_beacon"
-	spawnables = list(/obj/item/wrench, /obj/machinery/jukebox)
+	spawnables = list(/obj/item/wrench, /obj/machinery/jukebox/unlocked)
 
 /obj/item/generic_beacon/hotdog
 	name = "tactical hotdog deployer"
