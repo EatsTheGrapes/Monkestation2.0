@@ -44,30 +44,33 @@
 	var/mob/living/carbon/human/installer = allocate(/mob/living/carbon/human/consistent)
 	installer.fully_replace_character_name(null, "Unit Test Installer")
 	var/ipc_directive = syndicate_mmi.get_ipc_brainwash_directive(shell, installer)
-	TEST_ASSERT(findtext(ipc_directive, installer.real_name), "A Syndicate MMI with existing brainwashing did not generate an IPC directive for its installer.")
+	TEST_ASSERT_NULL(ipc_directive, "A Syndicate MMI with existing brainwashing generated a duplicate IPC directive.")
+
+	syndicate_mmi.try_brainwash(installer)
+	TEST_ASSERT_EQUAL(length(syndicate_mmi.brainwash_objectives), 1, "Reapplying Syndicate MMI brainwashing duplicated its tracked objective.")
 
 	var/obj/item/bodypart/chest = shell.get_bodypart(BODY_ZONE_CHEST)
 	TEST_ASSERT(syndicate_mmi.attempt_become_ipc_organ(chest, shell, installer), "The occupied Syndicate MMI could not be installed into an empty IPC shell.")
 	TEST_ASSERT_EQUAL(shell.mind, incoming_personality, "The incoming MMI personality was not transferred to the IPC shell.")
 	TEST_ASSERT_EQUAL(syndicate_mmi.brainwash_directive, original_directive, "IPC installation overwrote the MMI's persistent brainwashing directive.")
 	TEST_ASSERT_EQUAL(length(syndicate_mmi.brainwash_objectives), 1, "IPC installation altered the MMI's normal brainwashing objective tracking.")
-	TEST_ASSERT_EQUAL(length(syndicate_mmi.ipc_brainwash_objectives), 1, "IPC installation did not separately track its installer-loyalty objective.")
+	TEST_ASSERT_NULL(syndicate_mmi.ipc_brainwash_objectives, "IPC installation created a redundant Syndicate MMI directive.")
 
 	var/datum/antagonist/brainwashed/installed_brainwashing = shell.mind.has_antag_datum(/datum/antagonist/brainwashed)
 	TEST_ASSERT_NOTNULL(installed_brainwashing, "The installed IPC did not retain its Syndicate MMI brainwashing.")
-	TEST_ASSERT_EQUAL(length(installed_brainwashing.objectives), 2, "The installed IPC did not have both normal MMI and installer-loyalty directives.")
+	TEST_ASSERT_EQUAL(length(installed_brainwashing.objectives), 1, "The installed IPC received duplicate Syndicate MMI directives.")
 
 	var/obj/item/organ/internal/brain/positronic/installed_brain = shell.get_organ_slot(ORGAN_SLOT_BRAIN)
 	installed_brain.surgical_extraction = TRUE
 	var/obj/item/mmi/extracted_mmi = installed_brain.Remove(shell)
 	TEST_ASSERT_EQUAL(extracted_mmi, syndicate_mmi, "Surgical extraction did not return the installed Syndicate MMI.")
 	TEST_ASSERT_EQUAL(syndicate_mmi.brainmob?.mind, incoming_personality, "The extracted MMI did not recover the IPC's personality.")
-	TEST_ASSERT_NULL(syndicate_mmi.ipc_brainwash_objectives, "Surgical extraction retained the IPC-only installer-loyalty objective tracking.")
+	TEST_ASSERT_NULL(syndicate_mmi.ipc_brainwash_objectives, "Surgical extraction retained IPC-only brainwashing tracking.")
 	TEST_ASSERT_EQUAL(length(syndicate_mmi.brainwash_objectives), 1, "Surgical extraction removed the Syndicate MMI's normal objective tracking.")
 
 	var/datum/antagonist/brainwashed/extracted_brainwashing = incoming_personality.has_antag_datum(/datum/antagonist/brainwashed)
-	TEST_ASSERT_NOTNULL(extracted_brainwashing, "Extracting the MMI removed all brainwashing instead of only IPC installer loyalty.")
-	TEST_ASSERT_EQUAL(length(extracted_brainwashing.objectives), 1, "Extracting the MMI did not remove exactly the IPC-only installer-loyalty directive.")
+	TEST_ASSERT_NOTNULL(extracted_brainwashing, "Extracting the MMI removed its normal Syndicate brainwashing.")
+	TEST_ASSERT_EQUAL(length(extracted_brainwashing.objectives), 1, "Extracting the MMI changed its normal Syndicate directive count.")
 
 	syndicate_mmi.try_unbrainwash()
 	TEST_ASSERT_NULL(incoming_personality.has_antag_datum(/datum/antagonist/brainwashed), "Removing the remaining normal MMI brainwashing left a brainwashed antagonist datum behind.")
@@ -99,7 +102,7 @@
 
 	var/datum/antagonist/brainwashed/installed_brainwashing = shell.mind.has_antag_datum(/datum/antagonist/brainwashed)
 	TEST_ASSERT_NOTNULL(installed_brainwashing, "The installed IPC was not brainwashed before special removal.")
-	TEST_ASSERT_EQUAL(length(installed_brainwashing.objectives), 2, "The installed IPC did not begin with both tracked brainwashing directives.")
+	TEST_ASSERT_EQUAL(length(installed_brainwashing.objectives), 1, "The installed IPC began with duplicate Syndicate MMI directives.")
 
 	var/obj/item/organ/internal/brain/positronic/installed_brain = shell.get_organ_slot(ORGAN_SLOT_BRAIN)
 	installed_brain.Remove(shell, special = TRUE)
@@ -136,7 +139,7 @@
 
 	var/datum/antagonist/brainwashed/installed_brainwashing = shell.mind.has_antag_datum(/datum/antagonist/brainwashed)
 	TEST_ASSERT_NOTNULL(installed_brainwashing, "The installed IPC was not brainwashed before direct brain deletion.")
-	TEST_ASSERT_EQUAL(length(installed_brainwashing.objectives), 2, "The installed IPC did not begin with both tracked brainwashing directives.")
+	TEST_ASSERT_EQUAL(length(installed_brainwashing.objectives), 1, "The installed IPC began with duplicate Syndicate MMI directives.")
 
 	var/obj/item/organ/internal/brain/positronic/installed_brain = shell.get_organ_slot(ORGAN_SLOT_BRAIN)
 	qdel(installed_brain)
