@@ -63,6 +63,8 @@
 	var/datum/antagonist/brainwashed/bound_brainwashing = bound_personality.has_antag_datum(/datum/antagonist/brainwashed)
 	TEST_ASSERT_NOTNULL(bound_brainwashing, "An imprinted positronic IPC did not receive its master directive.")
 	TEST_ASSERT_EQUAL(length(bound_brainwashing.objectives), 1, "An imprinted positronic IPC received duplicate directives.")
+	bound_posi.try_unbrainwash_ipc(bound_shell)
+	TEST_ASSERT_NULL(bound_personality.has_antag_datum(/datum/antagonist/brainwashed), "The positronic binding test left brainwashing active during test cleanup.")
 
 /datum/unit_test/syndicate_mmi_ipc_brainwashing_lifecycle
 
