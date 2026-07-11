@@ -45,6 +45,8 @@
 		ipc_tongue = null
 	if(gone == antennae)
 		antennae = null
+	if(secured && !check_completion())
+		secured = FALSE
 
 /obj/item/bodypart/head/ipc/Destroy()
 	QDEL_NULL(ipc_eyes)
@@ -72,6 +74,7 @@
 	ipc_ears = null
 	ipc_tongue = null
 	antennae = null
+	secured = FALSE
 
 /obj/item/bodypart/head/ipc/proc/install_stored_organs(mob/living/carbon/receiver)
 	if(ipc_eyes && !ipc_eyes.Insert(receiver, TRUE, FALSE))
