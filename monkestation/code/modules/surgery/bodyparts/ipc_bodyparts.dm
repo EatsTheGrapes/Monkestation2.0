@@ -83,8 +83,15 @@
 	if(ipc_tongue && !ipc_tongue.Insert(receiver, TRUE, FALSE))
 		return FALSE
 	ipc_tongue = null
-	if(antennae && !antennae.Insert(receiver, TRUE, FALSE))
-		return FALSE
+	if(antennae)
+		var/datum/bodypart_overlay/mutant/antennae_ipc/antennae_overlay = antennae.bodypart_overlay
+		var/antennae_style = antennae_overlay?.sprite_datum?.name
+		if(!antennae_style || antennae_style == SPRITE_ACCESSORY_NONE)
+			antennae_style = "Angled"
+			antennae_overlay?.set_appearance_from_name(antennae_style)
+		receiver.dna.features["ipc_antenna"] = antennae_style
+		if(!antennae.Insert(receiver, TRUE, FALSE))
+			return FALSE
 	antennae = null
 	return TRUE
 
