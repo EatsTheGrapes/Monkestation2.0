@@ -203,7 +203,7 @@
 	var/obj/item/mmi/M = tool
 
 	user.temporarilyRemoveItemFromInventory(tool)
-	M.attempt_become_ipc_organ(affected,target)
+	M.attempt_become_ipc_organ(affected, target, user)
 	return ..()
 
 /datum/surgery_step/install_brain/failure(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/surgery/surgery)
