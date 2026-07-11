@@ -48,19 +48,13 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 	var/searching = FALSE
 	///Identifies the active personality request so an answer to an expired request cannot claim a later one.
 	var/personality_request_id = 0
-	///Identifies the active personality request so an answer to an expired request cannot claim a later one.
-	var/personality_request_id = 0
 	///List of all ckeys who has already entered this posibrain once before.
 	var/list/ckeys_entered = list()
 	var/create_brainmob_on_init = TRUE
 
 /obj/item/mmi/posibrain/Destroy()
 	imprinted_master_ref = null
-	imprinted_master_ref = null
 	return ..()
-
-/obj/item/mmi/posibrain/proc/get_imprinted_master()
-	return imprinted_master_ref?.resolve()
 
 /obj/item/mmi/posibrain/proc/get_imprinted_master()
 	return imprinted_master_ref?.resolve()
@@ -97,9 +91,7 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 	next_ask = world.time + ask_delay
 	searching = TRUE
 	personality_request_id++
-	personality_request_id++
 	update_appearance()
-	addtimer(CALLBACK(src, PROC_REF(check_success), personality_request_id), ask_delay)
 	addtimer(CALLBACK(src, PROC_REF(check_success), personality_request_id), ask_delay)
 
 /obj/item/mmi/posibrain/attack_self_secondary(mob/living/user)
@@ -112,7 +104,6 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 		to_chat(user, span_warning("This [name] is already requesting a personality and can no longer be imprinted!"))
 		return
 	var/mob/living/carbon/human/imprinted_master = get_imprinted_master()
-	var/mob/living/carbon/human/imprinted_master = get_imprinted_master()
 	if(imprinted_master)
 		to_chat(user, span_warning("This [name] is already imprinted to [imprinted_master]."))
 		return
@@ -120,7 +111,6 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 		to_chat(user, span_warning("Your identity is incompatible with [src]'s imprinting system."))
 		return
 	var/mob/living/carbon/human/imprinting_user = user
-	imprinted_master_ref = WEAKREF(imprinting_user)
 	imprinted_master_ref = WEAKREF(imprinting_user)
 	to_chat(user, span_notice("You press your thumb against [src] and imprint it to yourself. Any personality installed into an IPC shell with this brain will be bound to obey you."))
 	update_appearance()
@@ -134,9 +124,6 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 	update_appearance()
 	return CLICK_ACTION_SUCCESS
 
-/obj/item/mmi/posibrain/proc/check_success(request_id)
-	if(!isnull(request_id) && (!searching || request_id != personality_request_id))
-		return
 /obj/item/mmi/posibrain/proc/check_success(request_id)
 	if(!isnull(request_id) && (!searching || request_id != personality_request_id))
 		return
@@ -182,10 +169,6 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 	var/mob/living/carbon/human/imprinted_master = get_imprinted_master()
 	var/was_imprinted = !!imprinted_master
 	var/datum/weakref/imprinted_master_at_prompt = imprinted_master ? WEAKREF(imprinted_master) : null
-	var/request_id = personality_request_id
-	var/mob/living/carbon/human/imprinted_master = get_imprinted_master()
-	var/was_imprinted = !!imprinted_master
-	var/datum/weakref/imprinted_master_at_prompt = imprinted_master ? WEAKREF(imprinted_master) : null
 	var/activation_warning = "Warning: You can no longer be revived, and all past lives will be forgotten!"
 	if(type == /obj/item/mmi/posibrain)
 		if(imprinted_master)
@@ -203,7 +186,7 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 		if(was_imprinted != !!current_imprinted_master || (was_imprinted && imprinted_master_at_prompt?.resolve() != current_imprinted_master))
 			to_chat(user, span_warning("[src]'s imprint changed while you were deciding. Review the new terms before accepting."))
 			return
-	if(is_occupied() || user.ckey in ckeys_entered || is_banned_from(user.ckey, ROLE_POSIBRAIN))
+	if(is_occupied() || (user.ckey in ckeys_entered) || is_banned_from(user.ckey, ROLE_POSIBRAIN))
 		return
 	if(HAS_TRAIT(brainmob, TRAIT_SUICIDED)) //clear suicide status if the old occupant suicided.
 		brainmob.set_suicide(FALSE)
@@ -265,12 +248,9 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 		return get_updated_brainwash_directive(installer)
 	if(brainwash_objectives)
 		return
-	if(brainwash_objectives)
-		return
 	return force_cyborg_lawzero
 
 /obj/item/mmi/posibrain/get_ipc_brainwash_directive(mob/living/carbon/human/H, mob/living/installer)
-	var/mob/living/carbon/human/imprinted_master = get_imprinted_master()
 	var/mob/living/carbon/human/imprinted_master = get_imprinted_master()
 	if(imprinted_master)
 		return "You are permanently imprinted to [imprinted_master], obey [imprinted_master]'s every order and assist [imprinted_master.p_them()] in completing [imprinted_master.p_their()] goals at any cost."
@@ -286,10 +266,7 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 /// Removes only the brainwashing applied by IPC installation.
 /obj/item/mmi/proc/try_unbrainwash_ipc(mob/living/brainwash_target = brainmob)
 	if(!ipc_brainwash_objectives || !brainwash_target)
-/obj/item/mmi/proc/try_unbrainwash_ipc(mob/living/brainwash_target = brainmob)
-	if(!ipc_brainwash_objectives || !brainwash_target)
 		return
-	unbrainwash(brainwash_target, ipc_brainwash_objectives)
 	unbrainwash(brainwash_target, ipc_brainwash_objectives)
 	ipc_brainwash_objectives = null
 
@@ -340,7 +317,6 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 
 /obj/item/mmi/proc/attempt_become_ipc_organ(obj/item/bodypart/parent, mob/living/carbon/human/H, mob/living/installer)
 	if(!brainmob?.mind || !isipc(H) || !parent || parent != H.get_bodypart(BODY_ZONE_CHEST) || !(parent.bodytype & BODYTYPE_ROBOTIC) || H.get_organ_slot(ORGAN_SLOT_BRAIN) || H.mind)
-	if(!brainmob?.mind || !isipc(H) || !parent || parent != H.get_bodypart(BODY_ZONE_CHEST) || !(parent.bodytype & BODYTYPE_ROBOTIC) || H.get_organ_slot(ORGAN_SLOT_BRAIN) || H.mind)
 		return FALSE
 	var/holder_type = get_ipc_brain_holder_type()
 	var/obj/item/organ/internal/brain/positronic/holder = new holder_type()
@@ -351,10 +327,7 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 		brainmob.mind.transfer_to(H)
 	var/ipc_brainwash_directive = get_ipc_brainwash_directive(H, installer)
 	if(ipc_brainwash_directive)
-	var/ipc_brainwash_directive = get_ipc_brainwash_directive(H, installer)
-	if(ipc_brainwash_directive)
 		to_chat(H, span_userdanger("You feel the MMI overriding your free will!"))
-		ipc_brainwash_objectives = brainwash(H, ipc_brainwash_directive, src)
 		ipc_brainwash_objectives = brainwash(H, ipc_brainwash_directive, src)
 	clear_ipc_brainmob()
 	holder.Insert(H)
@@ -363,7 +336,6 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 /obj/item/mmi/posibrain/examine(mob/user)
 	. = ..()
 	if(type == /obj/item/mmi/posibrain)
-		var/mob/living/carbon/human/imprinted_master = get_imprinted_master()
 		var/mob/living/carbon/human/imprinted_master = get_imprinted_master()
 		if(imprinted_master)
 			. += span_warning("It is imprinted to [imprinted_master]. A personality installed into an IPC shell with it will be bound to obey them.")
@@ -449,14 +421,7 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 	stored_mmi.try_unbrainwash_ipc(brainwash_target)
 	stored_mmi.try_unbrainwash(brainwash_target)
 
-/obj/item/organ/internal/brain/positronic/proc/clear_stored_mmi_brainwashing(mob/living/brainwash_target)
-	if(!stored_mmi || !brainwash_target)
-		return
-	stored_mmi.try_unbrainwash_ipc(brainwash_target)
-	stored_mmi.try_unbrainwash(brainwash_target)
-
 /obj/item/organ/internal/brain/positronic/Destroy()
-	clear_stored_mmi_brainwashing(owner)
 	clear_stored_mmi_brainwashing(owner)
 	QDEL_NULL(stored_mmi)
 	return ..()
@@ -527,8 +492,6 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 	var/mob/living/carbon/human/old_owner = owner
 	var/was_surgical_extraction = surgical_extraction
 	surgical_extraction = FALSE
-	if(special)
-		clear_stored_mmi_brainwashing(old_owner)
 	if(special)
 		clear_stored_mmi_brainwashing(old_owner)
 	. = ..(user, special, TRUE)
