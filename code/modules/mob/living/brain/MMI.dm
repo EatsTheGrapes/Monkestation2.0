@@ -351,11 +351,11 @@
 	to_chat(brainmob, span_userdanger( "You feel the MMI overriding your free will!"))
 	brainwash_objectives = brainwash(brainmob, brainwash_directive)
 
-/// Undoes any brainwashing that we've done.
-/obj/item/mmi/proc/try_unbrainwash()
-	if(!brainwash_objectives || !brainmob)
+/// Undoes any normal MMI brainwashing that we've applied to the provided occupant.
+/obj/item/mmi/proc/try_unbrainwash(mob/living/brainwash_target = brainmob)
+	if(!brainwash_objectives || !brainwash_target)
 		return
-	unbrainwash(brainmob, brainwash_objectives)
+	unbrainwash(brainwash_target, brainwash_objectives)
 	brainwash_objectives = null
 
 /obj/item/mmi/ipc/Initialize(mapload) // IPC MMI brain, brain for spawned IPCs with MMI pref, radio off by default for balance concerns

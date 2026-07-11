@@ -136,7 +136,7 @@
 	return stomach && lungs && heart && liver && core_wired
 
 /obj/item/ipc_core/proc/check_body_completion()
-	return check_core_completion() && core_secured && l_arm && r_arm && l_leg && r_leg && head?.secured
+	return check_core_completion() && core_secured && l_arm && r_arm && l_leg && r_leg && head && head.secured && head.check_completion()
 
 /obj/item/ipc_core/proc/check_completion()
 	return check_body_completion() && screen && screen_wired && screen_secured
@@ -276,7 +276,7 @@
 	if(!core_secured)
 		to_chat(user, span_warning("The IPC core's chest cavity must be secured before it can be finalized."))
 		return ITEM_INTERACT_BLOCKING
-	if(!head?.secured || !l_arm || !r_arm || !l_leg || !r_leg)
+	if(!head || !head.secured || !head.check_completion() || !l_arm || !r_arm || !l_leg || !r_leg)
 		to_chat(user, span_warning("The IPC core must have a secured head assembly plus both arms and legs before it can be finalized."))
 		return ITEM_INTERACT_BLOCKING
 	if(!screen)
@@ -356,7 +356,7 @@
 			user.balloon_alert(user, "head already present!")
 			return ITEM_INTERACT_BLOCKING
 		var/obj/item/bodypart/head/ipc/ipc_head = tool
-		if(!ipc_head.secured)
+		if(!ipc_head.secured || !ipc_head.check_completion())
 			to_chat(user, span_warning("The IPC head has to be fully assembled and secured before it can be attached."))
 			return ITEM_INTERACT_BLOCKING
 		if(!user.transferItemToLoc(tool, src))

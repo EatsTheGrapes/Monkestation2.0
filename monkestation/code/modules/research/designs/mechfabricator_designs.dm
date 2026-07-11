@@ -121,7 +121,7 @@
 	id = "ipc_core"
 	build_type = MECHFAB
 	build_path = /obj/item/ipc_core
-	materials = list(/datum/material/iron = SHEET_MATERIAL_AMOUNT*100, /datum/material/titanium = SHEET_MATERIAL_AMOUNT*100, /datum/material/glass = SHEET_MATERIAL_AMOUNT*100)
+	materials = list(/datum/material/iron = SHEET_MATERIAL_AMOUNT*5, /datum/material/titanium = SHEET_MATERIAL_AMOUNT*5, /datum/material/glass = SHEET_MATERIAL_AMOUNT*5)
 	construction_time = 30 SECONDS
 	category = list(
 		RND_CATEGORY_IPC + RND_SUBCATEGORY_IPC_COMPONENTS
