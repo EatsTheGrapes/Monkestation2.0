@@ -8,8 +8,8 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 
 /obj/item/mmi/posibrain
 	name = "positronic brain"
-	desc = "A cube of shining metal, four inches to a side and covered in shallow grooves. Use it in hand to request an unbound personality, or right-click it before activation to imprint it to yourself. An imprinted positronic brain installed into an IPC shell will be bound to its master. Alt-click it to set a personality seed for the ghost poll."
-	desc_controls = "Use in hand to request an unbound personality. Right-click before activation to imprint it to yourself, then use it in hand to request a master-bound personality. Alt-click to set a personality seed."
+	desc = "A cube of shining metal, four inches to a side and covered in shallow grooves. Use it in hand to request an unbound personality, or right-click it before its first activation to imprint it to yourself. An imprinted positronic brain installed into an IPC shell will be bound to its master. Once a personality activates, the imprint state is permanently locked. Alt-click it to set a personality seed for the ghost poll."
+	desc_controls = "Use in hand to request an unbound personality. Right-click before its first activation to imprint it to yourself, then use it in hand to request a master-bound personality. Once activated, it can no longer be imprinted. Alt-click to set a personality seed."
 	icon = 'icons/obj/assemblies/assemblies.dmi'
 	icon_state = "posibrain"
 	base_icon_state = "posibrain"
@@ -34,6 +34,8 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 	var/ask_role = ""
 	///Weak reference to who this positronic will serve if installed into an IPC shell. Null means it remains unbound.
 	var/datum/weakref/imprinted_master_ref
+	/// Whether this positronic brain has ever hosted an activated personality. Imprinting is permanently locked once this becomes true.
+	var/personality_activated = FALSE
 	///Role assigned to the newly created mind
 	var/posibrain_job_path = /datum/job/positronic_brain
 	///World time tick when ghost polling will be available again
@@ -97,8 +99,8 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 /obj/item/mmi/posibrain/attack_self_secondary(mob/living/user)
 	if(type != /obj/item/mmi/posibrain)
 		return ..()
-	if(is_occupied())
-		to_chat(user, span_warning("This [name] is already active and can no longer be imprinted!"))
+	if(personality_activated || is_occupied())
+		to_chat(user, span_warning("This [name] has already activated and can no longer be imprinted!"))
 		return
 	if(searching)
 		to_chat(user, span_warning("This [name] is already requesting a personality and can no longer be imprinted!"))
@@ -193,6 +195,7 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 	transfer_personality(user)
 
 /obj/item/mmi/posibrain/transfer_identity(mob/living/carbon/transfered_user)
+	personality_activated = TRUE
 	name = "[initial(name)] ([transfered_user])"
 	brainmob.name = transfered_user.real_name
 	brainmob.real_name = transfered_user.real_name
@@ -222,6 +225,7 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 		candidate.mind.transfer_to(brainmob)
 	else
 		brainmob.PossessByPlayer(candidate.ckey)
+	personality_activated = TRUE
 	name = "[initial(name)] ([brainmob.name])"
 	var/policy = get_policy(ROLE_POSIBRAIN)
 	if(policy)
@@ -243,6 +247,9 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 /obj/item/mmi/proc/get_ipc_brainwash_directive(mob/living/carbon/human/H, mob/living/installer)
 	return
 
+/obj/item/mmi/proc/get_ipc_brainwash_message()
+	return "You feel the MMI overriding your free will!"
+
 /obj/item/mmi/syndie/get_ipc_brainwash_directive(mob/living/carbon/human/H, mob/living/installer)
 	if(installer)
 		return get_updated_brainwash_directive(installer)
@@ -255,6 +262,9 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 	if(imprinted_master)
 		return "You are permanently imprinted to [imprinted_master], obey [imprinted_master]'s every order and assist [imprinted_master.p_them()] in completing [imprinted_master.p_their()] goals at any cost."
 	return ..()
+
+/obj/item/mmi/posibrain/get_ipc_brainwash_message()
+	return "Your positronic imprint asserts itself, binding you to your master!"
 
 /obj/item/mmi/proc/clear_ipc_brainmob()
 	if(!brainmob)
@@ -308,6 +318,7 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 	update_appearance()
 
 /obj/item/mmi/posibrain/restore_ipc_brainmob(mob/living/carbon/human/H, conscious = TRUE)
+	personality_activated = TRUE
 	. = ..(H, conscious)
 	if(brainmob)
 		name = "[initial(name)] ([brainmob.real_name])"
@@ -327,7 +338,7 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 		brainmob.mind.transfer_to(H)
 	var/ipc_brainwash_directive = get_ipc_brainwash_directive(H, installer)
 	if(ipc_brainwash_directive)
-		to_chat(H, span_userdanger("You feel the MMI overriding your free will!"))
+		to_chat(H, span_userdanger(get_ipc_brainwash_message()))
 		ipc_brainwash_objectives = brainwash(H, ipc_brainwash_directive, src)
 	clear_ipc_brainmob()
 	holder.Insert(H)
@@ -341,6 +352,8 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 			. += span_warning("It is imprinted to [imprinted_master]. A personality installed into an IPC shell with it will be bound to obey them.")
 		else
 			. += span_notice("It is not imprinted. A personality installed into an IPC shell with it will remain unbound.")
+		if(personality_activated)
+			. += span_warning("Its imprint state was permanently locked when its personality activated.")
 	if(brainmob?.key)
 		switch(brainmob.stat)
 			if(CONSCIOUS)
@@ -509,6 +522,7 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 				dropping_mmi.try_unbrainwash_ipc()
 			else
 				dropping_mmi.start_ipc_brain_reboot(old_owner)
+			old_owner.SetSleeping(0)
 		qdel(src)
 
 /obj/item/organ/internal/brain/positronic/mmi // MMI version of internal brain, also shouldn't ever be seen

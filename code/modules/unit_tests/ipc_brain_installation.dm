@@ -20,6 +20,50 @@
 	TEST_ASSERT_EQUAL(incoming_personality.current, incoming_brainmob, "A rejected MMI installation transferred the incoming personality out of its brainmob.")
 	TEST_ASSERT_EQUAL(incoming_mmi.loc, original_mmi_location, "A rejected MMI installation moved the incoming MMI.")
 
+/datum/unit_test/positronic_ipc_binding_states
+
+/datum/unit_test/positronic_ipc_binding_states/Run()
+	var/mob/living/carbon/human/consistent/master = allocate(/mob/living/carbon/human/consistent)
+	master.fully_replace_character_name(null, "Positronic Test Master")
+
+	var/obj/item/mmi/posibrain/activated_unbound_posi = allocate(/obj/item/mmi/posibrain)
+	activated_unbound_posi.personality_activated = TRUE
+	activated_unbound_posi.attack_self_secondary(master)
+	TEST_ASSERT_NULL(activated_unbound_posi.get_imprinted_master(), "A positronic brain accepted a new imprint after a personality had already activated.")
+
+	var/mob/living/carbon/human/species/ipc/unbound_shell = allocate(/mob/living/carbon/human/species/ipc)
+	var/obj/item/organ/internal/brain/positronic/unbound_default_brain = unbound_shell.get_organ_slot(ORGAN_SLOT_BRAIN)
+	unbound_default_brain.Remove(unbound_shell, special = TRUE)
+	qdel(unbound_default_brain)
+
+	var/obj/item/mmi/posibrain/unbound_posi = allocate(/obj/item/mmi/posibrain)
+	unbound_posi.brainmob.mind_initialize()
+	var/datum/mind/unbound_personality = unbound_posi.brainmob.mind
+	TEST_ASSERT_NULL(unbound_posi.get_ipc_brainwash_directive(unbound_shell, master), "An unbound positronic brain generated a master directive.")
+	var/obj/item/bodypart/unbound_chest = unbound_shell.get_bodypart(BODY_ZONE_CHEST)
+	TEST_ASSERT(unbound_posi.attempt_become_ipc_organ(unbound_chest, unbound_shell, master), "An unbound positronic brain could not be installed into an IPC shell.")
+	TEST_ASSERT_EQUAL(unbound_shell.mind, unbound_personality, "The unbound positronic personality was not transferred to its IPC shell.")
+	TEST_ASSERT_NULL(unbound_personality.has_antag_datum(/datum/antagonist/brainwashed), "An unbound positronic IPC received a brainwashing directive.")
+
+	var/mob/living/carbon/human/species/ipc/bound_shell = allocate(/mob/living/carbon/human/species/ipc)
+	var/obj/item/organ/internal/brain/positronic/bound_default_brain = bound_shell.get_organ_slot(ORGAN_SLOT_BRAIN)
+	bound_default_brain.Remove(bound_shell, special = TRUE)
+	qdel(bound_default_brain)
+
+	var/obj/item/mmi/posibrain/bound_posi = allocate(/obj/item/mmi/posibrain)
+	bound_posi.brainmob.mind_initialize()
+	var/datum/mind/bound_personality = bound_posi.brainmob.mind
+	bound_posi.imprinted_master_ref = WEAKREF(master)
+	var/bound_directive = bound_posi.get_ipc_brainwash_directive(bound_shell, master)
+	TEST_ASSERT(findtext(bound_directive, master.real_name), "An imprinted positronic brain did not generate its master's directive.")
+	TEST_ASSERT_EQUAL(bound_posi.get_ipc_brainwash_message(), "Your positronic imprint asserts itself, binding you to your master!", "An imprinted positronic brain used generic MMI installation feedback.")
+	var/obj/item/bodypart/bound_chest = bound_shell.get_bodypart(BODY_ZONE_CHEST)
+	TEST_ASSERT(bound_posi.attempt_become_ipc_organ(bound_chest, bound_shell, master), "An imprinted positronic brain could not be installed into an IPC shell.")
+	TEST_ASSERT_EQUAL(bound_shell.mind, bound_personality, "The imprinted positronic personality was not transferred to its IPC shell.")
+	var/datum/antagonist/brainwashed/bound_brainwashing = bound_personality.has_antag_datum(/datum/antagonist/brainwashed)
+	TEST_ASSERT_NOTNULL(bound_brainwashing, "An imprinted positronic IPC did not receive its master directive.")
+	TEST_ASSERT_EQUAL(length(bound_brainwashing.objectives), 1, "An imprinted positronic IPC received duplicate directives.")
+
 /datum/unit_test/syndicate_mmi_ipc_brainwashing_lifecycle
 
 /datum/unit_test/syndicate_mmi_ipc_brainwashing_lifecycle/Run()
@@ -60,6 +104,8 @@
 	TEST_ASSERT_NOTNULL(installed_brainwashing, "The installed IPC did not retain its Syndicate MMI brainwashing.")
 	TEST_ASSERT_EQUAL(length(installed_brainwashing.objectives), 1, "The installed IPC received duplicate Syndicate MMI directives.")
 
+	shell.Sleeping(5 MINUTES)
+	TEST_ASSERT(shell.IsSleeping(), "The IPC test shell did not enter sleep before brain extraction.")
 	var/obj/item/organ/internal/brain/positronic/installed_brain = shell.get_organ_slot(ORGAN_SLOT_BRAIN)
 	installed_brain.surgical_extraction = TRUE
 	var/obj/item/mmi/extracted_mmi = installed_brain.Remove(shell)
@@ -67,6 +113,7 @@
 	TEST_ASSERT_EQUAL(syndicate_mmi.brainmob?.mind, incoming_personality, "The extracted MMI did not recover the IPC's personality.")
 	TEST_ASSERT_NULL(syndicate_mmi.ipc_brainwash_objectives, "Surgical extraction retained IPC-only brainwashing tracking.")
 	TEST_ASSERT_EQUAL(length(syndicate_mmi.brainwash_objectives), 1, "Surgical extraction removed the Syndicate MMI's normal objective tracking.")
+	TEST_ASSERT(!shell.IsSleeping(), "An empty IPC shell retained its sleeping status and could continue producing snore emotes.")
 
 	var/datum/antagonist/brainwashed/extracted_brainwashing = incoming_personality.has_antag_datum(/datum/antagonist/brainwashed)
 	TEST_ASSERT_NOTNULL(extracted_brainwashing, "Extracting the MMI removed its normal Syndicate brainwashing.")
