@@ -189,13 +189,15 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 /obj/item/mmi/posibrain/get_ipc_brain_holder_type()
 	return /obj/item/organ/internal/brain/positronic
 
-/obj/item/mmi/proc/get_ipc_brainwash_directive(mob/living/carbon/human/H)
+/obj/item/mmi/proc/get_ipc_brainwash_directive(mob/living/carbon/human/H, mob/living/installer)
 	return
 
-/obj/item/mmi/syndie/get_ipc_brainwash_directive(mob/living/carbon/human/H)
+/obj/item/mmi/syndie/get_ipc_brainwash_directive(mob/living/carbon/human/H, mob/living/installer)
+	if(installer)
+		return get_updated_brainwash_directive(installer)
 	return force_cyborg_lawzero
 
-/obj/item/mmi/posibrain/get_ipc_brainwash_directive(mob/living/carbon/human/H)
+/obj/item/mmi/posibrain/get_ipc_brainwash_directive(mob/living/carbon/human/H, mob/living/installer)
 	if(imprinted_master)
 		return "You are permanently imprinted to [imprinted_master], obey [imprinted_master]'s every order and assist [imprinted_master.p_them()] in completing [imprinted_master.p_their()] goals at any cost."
 	return ..()
@@ -252,7 +254,7 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 			brainmob.mind.set_assigned_role(SSjob.GetJobType(posibrain_job_path))
 	update_appearance()
 
-/obj/item/mmi/proc/attempt_become_ipc_organ(obj/item/bodypart/parent, mob/living/carbon/human/H)
+/obj/item/mmi/proc/attempt_become_ipc_organ(obj/item/bodypart/parent, mob/living/carbon/human/H, mob/living/installer)
 	if(!brainmob)
 		return FALSE
 	var/holder_type = get_ipc_brain_holder_type()
@@ -262,7 +264,7 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 	holder.stored_mmi = src
 	if(brainmob.mind)
 		brainmob.mind.transfer_to(H)
-	brainwash_directive = get_ipc_brainwash_directive(H)
+	brainwash_directive = get_ipc_brainwash_directive(H, installer)
 	if(brainwash_directive)
 		to_chat(H, span_userdanger("You feel the MMI overriding your free will!"))
 		brainwash_objectives = brainwash(H, brainwash_directive, src)
