@@ -344,6 +344,8 @@
 
 /// Brainwashes the brainmob if we can do it.
 /obj/item/mmi/proc/try_brainwash(mob/living/user)
+	if(brainwash_objectives)
+		return
 	if(user)
 		brainwash_directive = get_updated_brainwash_directive(user)
 	if(!brainwash_directive || !brainmob)
@@ -383,4 +385,6 @@
 		. += "\t[span_info("Cyborgs may be connected to a master AI, but are not obligated to follow their orders.")]"
 
 /obj/item/mmi/syndie/get_updated_brainwash_directive(mob/living/user)
+	if(brainwash_objectives)
+		return
 	return "[user.real_name] is part of the Syndicate! Assist the Syndicate to the best of your abilities."
