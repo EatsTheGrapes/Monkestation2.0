@@ -2,9 +2,14 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 
 #define IPC_BRAIN_TRAUMATIC_REBOOT_DELAY 30 SECONDS
 
+/obj/item/mmi
+	/// Brainwashing objectives applied specifically while this MMI is installed in an IPC shell.
+	var/list/datum/weakref/ipc_brainwash_objectives
+
 /obj/item/mmi/posibrain
 	name = "positronic brain"
-	desc = "A cube of shining metal, four inches to a side and covered in shallow grooves."
+	desc = "A cube of shining metal, four inches to a side and covered in shallow grooves. Use it in hand to request an unbound personality, or right-click it before activation to imprint it to yourself. An imprinted positronic brain installed into an IPC shell will be bound to its master. Alt-click it to set a personality seed for the ghost poll."
+	desc_controls = "Use in hand to request an unbound personality. Right-click before activation to imprint it to yourself, then use it in hand to request a master-bound personality. Alt-click to set a personality seed."
 	icon = 'icons/obj/assemblies/assemblies.dmi'
 	icon_state = "posibrain"
 	base_icon_state = "posibrain"
@@ -27,9 +32,7 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 
 	///Can be set to tell ghosts what the brain will be used for
 	var/ask_role = ""
-	///Does this positronic need a master set before being activated
-	var/requires_master = TRUE
-	///Who will this positronic serve if placed in a IRC body
+	///Who this positronic will serve if installed into an IPC shell. Null means it remains unbound.
 	var/mob/living/carbon/human/imprinted_master = null
 	///Role assigned to the newly created mind
 	var/posibrain_job_path = /datum/job/positronic_brain
@@ -77,10 +80,6 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 	if(next_ask > world.time)
 		to_chat(user, recharge_message)
 		return
-	if(requires_master && !imprinted_master)
-		to_chat(user, span_notice("You press your thumb on [src] and imprint your user information."))
-		imprinted_master = user
-		return
 	//Start the process of requesting a new ghost.
 	to_chat(user, begin_activation_message)
 	ping_ghosts("requested", FALSE)
@@ -88,6 +87,26 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 	searching = TRUE
 	update_appearance()
 	addtimer(CALLBACK(src, PROC_REF(check_success)), ask_delay)
+
+/obj/item/mmi/posibrain/attack_self_secondary(mob/living/user)
+	if(type != /obj/item/mmi/posibrain)
+		return ..()
+	if(is_occupied())
+		to_chat(user, span_warning("This [name] is already active and can no longer be imprinted!"))
+		return
+	if(searching)
+		to_chat(user, span_warning("This [name] is already requesting a personality and can no longer be imprinted!"))
+		return
+	if(imprinted_master)
+		to_chat(user, span_warning("This [name] is already imprinted to [imprinted_master]."))
+		return
+	if(!ishuman(user))
+		to_chat(user, span_warning("Your identity is incompatible with [src]'s imprinting system."))
+		return
+	var/mob/living/carbon/human/imprinting_user = user
+	imprinted_master = imprinting_user
+	to_chat(user, span_notice("You press your thumb against [src] and imprint it to yourself. Any personality installed into an IPC shell with this brain will be bound to obey you."))
+	update_appearance()
 
 /obj/item/mmi/posibrain/click_alt(mob/living/user)
 	var/input_seed = tgui_input_text(user, "Enter a personality seed", "Enter seed", ask_role, max_length = MAX_NAME_LEN)
@@ -122,9 +141,12 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 			return TRUE
 	return FALSE
 
-///Two ways to activate a positronic brain. A clickable link in the ghost notif, or simply clicking the object itself.
+///Activates a positronic brain after a deliberate personality request.
 /obj/item/mmi/posibrain/proc/activate(mob/user)
 	if(QDELETED(brainmob))
+		return
+	if(type == /obj/item/mmi/posibrain && !searching)
+		to_chat(user, span_warning("[src] is not currently requesting a personality."))
 		return
 	if(user.ckey in ckeys_entered)
 		to_chat(user, span_warning("You cannot re-enter [src] a second time!"))
@@ -134,7 +156,13 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 	if(HAS_TRAIT(src, TRAIT_SUICIDED)) //if they suicided, they're out forever.
 		to_chat(user, span_warning("[src] fizzles slightly. Sadly it doesn't take those who suicided!"))
 		return
-	var/posi_ask = tgui_alert(user, "Become a [name]? (Warning, You can no longer be revived, and all past lives will be forgotten!)", "Confirm", list("Yes","No"))
+	var/activation_warning = "Warning: You can no longer be revived, and all past lives will be forgotten!"
+	if(type == /obj/item/mmi/posibrain)
+		if(imprinted_master)
+			activation_warning += " This brain is imprinted to [imprinted_master]. If installed into an IPC shell, you will be permanently bound to obey them."
+		else
+			activation_warning += " This brain is unbound. If installed into an IPC shell, you will retain your free will."
+	var/posi_ask = tgui_alert(user, "Become a [name]? ([activation_warning])", "Confirm", list("Yes","No"))
 	if(posi_ask != "Yes" || QDELETED(src))
 		return
 	if(HAS_TRAIT(brainmob, TRAIT_SUICIDED)) //clear suicide status if the old occupant suicided.
@@ -193,6 +221,8 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 	return
 
 /obj/item/mmi/syndie/get_ipc_brainwash_directive(mob/living/carbon/human/H, mob/living/installer)
+	if(brainwash_objectives)
+		return
 	if(installer)
 		return get_updated_brainwash_directive(installer)
 	return force_cyborg_lawzero
@@ -208,6 +238,13 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 	brainmob.container = null
 	QDEL_NULL(brainmob)
 	update_appearance()
+
+/// Removes only the brainwashing applied by IPC installation.
+/obj/item/mmi/proc/try_unbrainwash_ipc()
+	if(!ipc_brainwash_objectives || !brainmob)
+		return
+	unbrainwash(brainmob, ipc_brainwash_objectives)
+	ipc_brainwash_objectives = null
 
 /obj/item/mmi/proc/restore_ipc_brainmob(mob/living/carbon/human/H, conscious = TRUE)
 	if(!brainmob)
@@ -233,7 +270,7 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 	if(QDELETED(H))
 		return
 	restore_ipc_brainmob(H, FALSE)
-	try_unbrainwash()
+	try_unbrainwash_ipc()
 	visible_message(span_notice("[src] emits a low boot tone as its systems begin to recover."))
 	addtimer(CALLBACK(src, PROC_REF(finish_ipc_brain_reboot)), IPC_BRAIN_TRAUMATIC_REBOOT_DELAY)
 
@@ -267,13 +304,18 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 	brainwash_directive = get_ipc_brainwash_directive(H, installer)
 	if(brainwash_directive)
 		to_chat(H, span_userdanger("You feel the MMI overriding your free will!"))
-		brainwash_objectives = brainwash(H, brainwash_directive, src)
+		ipc_brainwash_objectives = brainwash(H, brainwash_directive, src)
 	clear_ipc_brainmob()
 	holder.Insert(H)
 	return TRUE
 
 /obj/item/mmi/posibrain/examine(mob/user)
 	. = ..()
+	if(type == /obj/item/mmi/posibrain)
+		if(imprinted_master)
+			. += span_warning("It is imprinted to [imprinted_master]. A personality installed into an IPC shell with it will be bound to obey them.")
+		else
+			. += span_notice("It is not imprinted. A personality installed into an IPC shell with it will remain unbound.")
 	if(brainmob?.key)
 		switch(brainmob.stat)
 			if(CONSCIOUS)
@@ -287,7 +329,7 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 			. += span_notice("Current consciousness seed: \"[ask_role]\"")
 		. += span_boldnotice("Alt-click to set a consciousness seed, specifying what [src] will be used for. This can help generate a personality interested in that role.")
 
-/obj/item/mmi/posibrain/Initialize(mapload, autoping = TRUE)
+/obj/item/mmi/posibrain/Initialize(mapload, autoping = FALSE)
 	. = ..()
 	if(!create_brainmob_on_init)
 		return
@@ -430,7 +472,7 @@ GLOBAL_VAR(posibrain_notify_cooldown)
 		if(old_owner)
 			if(was_surgical_extraction)
 				dropping_mmi.restore_ipc_brainmob(old_owner)
-				dropping_mmi.try_unbrainwash()
+				dropping_mmi.try_unbrainwash_ipc()
 			else
 				dropping_mmi.start_ipc_brain_reboot(old_owner)
 		qdel(src)

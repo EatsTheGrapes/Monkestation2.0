@@ -171,9 +171,6 @@
 	if(!istype(M))
 		return FALSE
 
-	if(!M.ready_for_ipc_install(user))
-		return FALSE
-
 	if(!(affected.bodytype & BODYTYPE_ROBOTIC))
 		to_chat(user, span_danger("You cannot install a computer brain into a meat enclosure."))
 		return FALSE
@@ -184,6 +181,9 @@
 
 	if(!target.dna.species)
 		to_chat(user, span_danger("You have no idea what species this person is. Report this on the bug tracker."))
+		return FALSE
+
+	if(!M.ready_for_ipc_install(user))
 		return FALSE
 
 	user.visible_message(
