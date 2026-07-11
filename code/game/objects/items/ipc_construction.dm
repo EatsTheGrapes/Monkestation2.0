@@ -471,8 +471,11 @@
 	if(!ipc_body)
 		return FALSE
 
-	// Remove the default IPC organs and limbs so the shell only uses the fabricated components.
+	// Remove default IPC organs so the shell only uses fabricated components.
+	// The iron butt is initialized with the shell and can still be replaced later through augmentation.
 	for(var/obj/item/organ/existing_organ as anything in ipc_body.organs.Copy())
+		if(istype(existing_organ, /obj/item/organ/internal/butt/iron))
+			continue
 		existing_organ.Remove(ipc_body, TRUE)
 		qdel(existing_organ)
 
