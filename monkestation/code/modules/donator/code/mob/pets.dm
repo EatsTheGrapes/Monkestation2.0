@@ -48,7 +48,7 @@
 /mob/living/basic/pet/cirno  //nobody needs to know she's a lizard
 	name = "Cirno"
 	desc = "She is the greatest."
-	icon = 'monkestation/icons/obj/plushes.dmi'
+	icon = 'icons/obj/plushes.dmi'
 	icon_state = "cirno-happy"
 	icon_living = "cirno-happy"
 	icon_dead = "cirno-happy"
@@ -464,6 +464,7 @@
 	response_help_continuous = "pets"
 	response_help_simple = "pet"
 	icon_gib = null
+	gender = MALE
 	gold_core_spawnable = NO_SPAWN
 	ai_controller = /datum/ai_controller/basic_controller/
 	ckeywhitelist = list("Flava-Floh")
@@ -489,3 +490,34 @@
 
 /mob/living/basic/pet/yato_neco_arc/get_laugh_sound()
 	return pick('monkestation/code/modules/donator/sounds/neco_arc_1.ogg','monkestation/code/modules/donator/sounds/neco_arc_2.ogg','monkestation/code/modules/donator/sounds/neco_arc_3.ogg')
+
+/mob/living/basic/axolotl/shark_costume
+	name = "shark axolotl"
+	desc = "This axolotl seems to wear a scary shark costume!"
+	icon = 'monkestation/code/modules/donator/icons/mob/pets.dmi'
+	icon_state = "shark_axolotl"
+	icon_living = "shark_axolotl"
+	icon_dead = "shark_axolotl-dead"
+	held_state = "shark_axolotl"
+	held_lh = 'monkestation/code/modules/donator/icons/mob/pets_held_lh.dmi'
+	held_rh = 'monkestation/code/modules/donator/icons/mob/pets_held_rh.dmi'
+	head_icon = 'monkestation/code/modules/donator/icons/mob/pets_held.dmi'
+	gold_core_spawnable = NO_SPAWN
+
+	ckeywhitelist = list("ZBunz")
+
+/mob/living/basic/mothroach/vanilla
+	name = "Vanilla"
+	desc = "A cute mothroach wearing a medical beret."
+	gender = FEMALE
+	icon = 'monkestation/code/modules/donator/icons/mob/pets.dmi'
+	icon_state = "vanilla_mothroach"
+	icon_living = "vanilla_mothroach"
+	icon_dead = "vanilla_mothroach_dead"
+	held_state = "vanilla_mothroach"
+	held_lh = 'monkestation/code/modules/donator/icons/mob/pets_held_lh.dmi'
+	held_rh = 'monkestation/code/modules/donator/icons/mob/pets_held_rh.dmi'
+	head_icon = 'monkestation/code/modules/donator/icons/mob/pets_held.dmi'
+	gold_core_spawnable = NO_SPAWN
+
+	ckeywhitelist = list("Rynnogen")

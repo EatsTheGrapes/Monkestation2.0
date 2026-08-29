@@ -67,6 +67,11 @@
 	/// What specific lift ID do we link with?
 	var/transport_linked_id
 
+	/// What door types do we want to align with if any
+	var/door_align_type
+	var/align_to_windows = FALSE
+	var/auto_dir_align = TRUE
+
 /datum/armor/machinery_door
 	melee = 30
 	bullet = 30
@@ -355,7 +360,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/door/crowbar_act(mob/living/user, obj/item/tool)
-	if((user.istate & ISTATE_HARM))
+	if((user.istate & ISTATE_HARM && user.istate & ISTATE_SECONDARY))
 		return
 
 	var/forced_open = FALSE
@@ -375,6 +380,9 @@
 	if(istype(weapon, /obj/item/access_key))
 		var/obj/item/access_key/key = weapon
 		return key.attempt_open_door(user, src)
+	else if (!(user.istate & ISTATE_HARM && user.istate & ISTATE_SECONDARY) && weapon.tool_behaviour == TOOL_CROWBAR)
+		try_to_crowbar(weapon, user, FALSE)
+		return TRUE
 	else if(!(user.istate & ISTATE_HARM) && istype(weapon, /obj/item/fireaxe))
 		try_to_crowbar(weapon, user, FALSE)
 		return TRUE
@@ -571,10 +579,8 @@
 	return !(machine_stat & NOPOWER)
 
 /obj/machinery/door/proc/update_freelook_sight()
-	if(!glass && GLOB.cameranet)
-		GLOB.cameranet.updateVisibility(src, 0)
-	if(!glass && GLOB.thrallnet)
-		GLOB.thrallnet.updateVisibility(src, 0)
+	if(!glass && SScameras)
+		SScameras.update_visibility(src)
 
 /obj/machinery/door/block_superconductivity() // All non-glass airlocks block heat, this is intended.
 	if(opacity || heat_proof)

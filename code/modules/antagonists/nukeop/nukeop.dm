@@ -237,11 +237,6 @@
 	back = /obj/item/mod/control/pre_equipped/empty/syndicate
 	uniform = /obj/item/clothing/under/syndicate
 
-/datum/outfit/nuclear_operative/post_equip(mob/living/carbon/human/H, visualsOnly)
-	var/obj/item/mod/module/armor_booster/booster = locate() in H.back
-	booster.active = TRUE
-	H.update_worn_back()
-
 /datum/outfit/nuclear_operative_elite
 	name = "Nuclear Operative (Elite, Preview only)"
 
@@ -250,10 +245,18 @@
 	l_hand = /obj/item/modular_computer/pda/nukeops
 	r_hand = /obj/item/shield/energy
 
+/datum/outfit/nuclear_operative_junior
+	name = "Nuclear Operative (Junior, Preview only)"
+
+	glasses = /obj/item/clothing/glasses/night
+	belt = /obj/item/storage/belt/military
+	back = /obj/item/storage/backpack/fireproof
+	head = /obj/item/clothing/head/helmet/space/syndicate
+	suit = /obj/item/clothing/suit/space/syndicate
+	uniform = /obj/item/clothing/under/syndicate
+	suit_store = /obj/item/tank/jetpack/oxygen
+
 /datum/outfit/nuclear_operative_elite/post_equip(mob/living/carbon/human/H, visualsOnly)
-	var/obj/item/mod/module/armor_booster/booster = locate() in H.back
-	booster.active = TRUE
-	H.update_worn_back()
 	var/obj/item/shield/energy/shield = locate() in H.held_items
 	shield.icon_state = "[shield.base_icon_state]1"
 	H.update_held_items()
@@ -352,7 +355,7 @@
 /datum/antagonist/nukeop/lone/junior
 	name = "Junior Lone Operative"
 	nukeop_outfit = /datum/outfit/syndicate/junior
-	preview_outfit = /datum/outfit/syndicate/junior
+	preview_outfit = /datum/outfit/nuclear_operative_junior
 
 /datum/antagonist/nukeop/lone/junior/memorize_code()
 	if(nuke_team && nuke_team.tracked_nuke)

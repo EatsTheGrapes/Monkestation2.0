@@ -9,7 +9,7 @@
 	supervisors = SUPERVISOR_HOS
 	exp_requirements = 600
 	exp_required_type = EXP_TYPE_CREW
-	exp_required_type_department = EXP_TYPE_SECURITY
+	exp_required_type_department = EXP_TYPE_MEDICAL
 	exp_granted_type = EXP_TYPE_CREW
 	config_tag = "BRIG_PHYSICIAN"
 
@@ -27,7 +27,7 @@
 		/datum/job_department/security,
 		)
 
-	family_heirlooms = list(/obj/item/storage/medkit/ancient/heirloom, /obj/item/scalpel, /obj/item/hemostat, /obj/item/circular_saw, /obj/item/retractor, /obj/item/cautery)
+	family_heirlooms = list(/obj/item/storage/medkit/ancient/heirloom, /obj/item/scalpel, /obj/item/hemostat, /obj/item/circular_saw, /obj/item/retractor, /obj/item/cautery, /obj/item/clothing/neck/stethoscope, /obj/item/flashlight/pen, /obj/item/clothing/mask/surgical)
 
 	mail_goodies = list(
 		/obj/item/healthanalyzer/advanced = 15,

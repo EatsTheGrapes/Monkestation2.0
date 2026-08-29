@@ -46,7 +46,8 @@ GLOBAL_LIST_EMPTY(features_by_species)
 	///Never, Optional, or Forced digi legs?
 	var/digitigrade_customization = DIGITIGRADE_NEVER
 	/// If your race uses a non standard bloodtype (typepath)
-	var/datum/blood_type/exotic_bloodtype
+	///Reagent that your species bleeds, and what chemical can be used to recover lost blood depend on this
+	var/exotic_bloodtype
 	///The rate at which blood is passively drained by having the blood deficiency quirk. Some races such as slimepeople can regen their blood at different rates so this is to account for that
 	var/blood_deficiency_drain_rate = BLOOD_REGEN_FACTOR + BLOOD_DEFICIENCY_MODIFIER // slightly above the regen rate so it slowly drains instead of regenerates.
 	///What the species drops when gibbed by a gibber machine.
@@ -536,6 +537,14 @@ GLOBAL_LIST_EMPTY(features_by_species)
 
 	if (old_species.type != type)
 		replace_body(C, src)
+
+	if(!C.get_bloodtype()?.is_species_universal) // Clown blood is forever.
+		//Assigns exotic blood type if the species has one
+		if(exotic_bloodtype && C.get_bloodtype()?.id != exotic_bloodtype)
+			C.set_blood_type(get_blood_type(exotic_bloodtype))
+		//Otherwise, check if the previous species had an exotic bloodtype and we do not have one and assign a random blood type
+		else if(old_species.exotic_bloodtype && isnull(exotic_bloodtype))
+			C.set_blood_type(random_human_blood_type())
 
 	regenerate_organs(C, old_species, visual_only = C.visual_only_organs)
 
@@ -1097,44 +1106,6 @@ GLOBAL_LIST_EMPTY(features_by_species)
 	return
 
 /**
- * Handling special reagent types.
- *
- * Return False to run the normal on_mob_life() for that reagent.
- * Return True to not run the normal metabolism effects.
- * NOTE: If you return TRUE, that reagent will not be removed liike normal! You must handle it manually.
- */
-/datum/species/proc/handle_chemical(datum/reagent/chem, mob/living/carbon/human/affected, seconds_per_tick, times_fired)
-	SHOULD_CALL_PARENT(TRUE)
-	// Cringe but blood handles this on its own
-	// This also has problems of its own but that's better fixed later I think
-	if(!istype(chem, /datum/reagent/blood))
-		var/datum/blood_type/blood = affected.get_blood_type()
-		if(chem.type == blood?.reagent_type)
-			affected.blood_volume = min(affected.blood_volume + round(chem.volume, 0.1), BLOOD_VOLUME_MAXIMUM)
-			affected.reagents.del_reagent(chem.type)
-			return TRUE
-		if(chem.type == blood?.restoration_chem && affected.blood_volume < BLOOD_VOLUME_NORMAL)
-			affected.blood_volume += 0.25 * seconds_per_tick
-			affected.reagents.remove_reagent(chem.type, chem.metabolization_rate * seconds_per_tick)
-			return TRUE
-
-	//This handles dumping unprocessable reagents.
-	var/dump_reagent = TRUE
-	if((chem.process_flags & SYNTHETIC) && (affected.dna.species.reagent_tag & PROCESS_SYNTHETIC))		//SYNTHETIC-oriented reagents require PROCESS_SYNTHETIC
-		dump_reagent = FALSE
-	if((chem.process_flags & ORGANIC) && (affected.dna.species.reagent_tag & PROCESS_ORGANIC))		//ORGANIC-oriented reagents require PROCESS_ORGANIC
-		dump_reagent = FALSE
-	if(dump_reagent)
-		chem.holder.remove_reagent(chem.type, chem.metabolization_rate)
-		return TRUE
-
-	if(!chem.overdosed && chem.overdose_threshold && chem.volume >= chem.overdose_threshold)
-		chem.overdosed = TRUE
-		chem.overdose_start(affected)
-		affected.log_message("has started overdosing on [chem.name] at [chem.volume] units.", LOG_GAME)
-	return SEND_SIGNAL(affected, COMSIG_SPECIES_HANDLE_CHEMICAL, chem, seconds_per_tick, times_fired)
-
-/**
  * Equip the outfit required for life. Replaces items currently worn.
  */
 /datum/species/proc/give_important_for_life(mob/living/carbon/human/human_to_equip)
@@ -1200,7 +1171,7 @@ GLOBAL_LIST_EMPTY(features_by_species)
 	if(attacker_style?.help_act(user, target) == MARTIAL_ATTACK_SUCCESS)
 		return TRUE
 
-	if(target.body_position == STANDING_UP || target.appears_alive())
+	if(target.body_position == STANDING_UP || (target.appears_alive() && target.stat != SOFT_CRIT && target.stat != HARD_CRIT))
 		target.help_shake_act(user)
 		if(target != user)
 			log_combat(user, target, "shaken")
@@ -1224,11 +1195,7 @@ GLOBAL_LIST_EMPTY(features_by_species)
 	else
 
 		var/obj/item/organ/internal/brain/brain = user.get_organ_slot(ORGAN_SLOT_BRAIN)
-		var/obj/item/bodypart/attacking_bodypart
-		if(brain)
-			attacking_bodypart = brain.get_attacking_limb(target)
-		if(!attacking_bodypart)
-			attacking_bodypart = user.get_active_hand()
+		var/obj/item/bodypart/attacking_bodypart = attacker_style?.get_attacking_limb(user, target) || brain?.get_attacking_limb(target) || user.get_active_hand()
 		var/atk_verb = attacking_bodypart.unarmed_attack_verb
 		var/atk_effect = attacking_bodypart.unarmed_attack_effect
 
@@ -1281,6 +1248,8 @@ GLOBAL_LIST_EMPTY(features_by_species)
 
 		var/attack_direction = get_dir(user, target)
 		var/attack_type = attacking_bodypart.attack_type
+		SEND_SIGNAL(target, COMSIG_HUMAN_GOT_PUNCHED, user, damage, attack_type, affecting)
+		SEND_SIGNAL(user, COMSIG_HUMAN_PUNCHED, target, damage, attack_type, affecting)
 		if(atk_effect == ATTACK_EFFECT_KICK)//kicks deal 1.5x raw damage
 			if(damage >= 9)
 				target.force_say()
@@ -1317,7 +1286,6 @@ GLOBAL_LIST_EMPTY(features_by_species)
 			target.apply_effect(knockdown_duration, EFFECT_KNOCKDOWN, armor_block)
 			log_combat(user, target, "got a stun punch with their previous punch")
 		return TRUE // monkestation edit
-
 /datum/species/proc/spec_unarmedattacked(mob/living/carbon/human/user, mob/living/carbon/human/target)
 	return
 
@@ -1694,6 +1662,7 @@ GLOBAL_LIST_EMPTY(features_by_species)
  */
 /datum/species/proc/create_pref_blood_perks()
 	var/list/to_add = list()
+	var/datum/blood_type/blood_type = exotic_bloodtype ? get_blood_type(exotic_bloodtype) : null
 
 	// TRAIT_NOBLOOD takes priority by default
 	if(TRAIT_NOBLOOD in inherent_traits)
@@ -1705,12 +1674,12 @@ GLOBAL_LIST_EMPTY(features_by_species)
 		))
 
 	// Otherwise otherwise, see if they have an exotic bloodtype set
-	else if(exotic_bloodtype)
+	else if(ispath(blood_type?.reagent_type))
 		to_add += list(list(
 			SPECIES_PERK_TYPE = SPECIES_NEUTRAL_PERK,
 			SPECIES_PERK_ICON = "tint",
-			SPECIES_PERK_NAME = "[initial(exotic_bloodtype.name)] Blood",
-			SPECIES_PERK_DESC = "[name] blood is [initial(exotic_bloodtype.name)], which can make recieving medical treatment more difficult.",
+			SPECIES_PERK_NAME = initial(blood_type.reagent_type.name),
+			SPECIES_PERK_DESC = "[name] blood is [initial(blood_type.reagent_type.name)], which can make receiving medical treatment harder.",
 		))
 
 	return to_add

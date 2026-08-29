@@ -160,3 +160,13 @@
 	name = "Neco-Arc"
 	default_name = "Neco-Arc"
 	donator_pet = /mob/living/basic/pet/yato_neco_arc
+
+/obj/item/choice_beacon/pet/donator/shark_axolotl
+	name = "Shark Axolotl"
+	default_name = "Shark Axolotl"
+	donator_pet = /mob/living/basic/axolotl/shark_costume
+
+/obj/item/choice_beacon/pet/donator/vanilla_mothroach
+	name = "Vanilla Mothroach"
+	default_name = "Vanilla"
+	donator_pet = /mob/living/basic/mothroach/vanilla

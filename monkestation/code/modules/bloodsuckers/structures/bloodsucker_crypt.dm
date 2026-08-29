@@ -110,7 +110,7 @@
 /obj/structure/bloodsucker/vassalrack
 	name = "persuasion rack"
 	desc = "If this wasn't meant for torture, then someone has some fairly horrifying hobbies."
-	icon = 'monkestation/icons/bloodsuckers/vamp_obj.dmi'
+	icon = 'icons/bloodsuckers/vamp_obj.dmi'
 	icon_state = "vassalrack"
 	anchored = FALSE
 	density = TRUE
@@ -381,7 +381,6 @@
 		// Convert to Vassal!
 		bloodsuckerdatum.AddBloodVolume(-TORTURE_CONVERSION_COST)
 		if(bloodsuckerdatum.make_vassal(target))
-			remove_loyalties(target)
 			SEND_SIGNAL(bloodsuckerdatum, COMSIG_BLOODSUCKER_MADE_VASSAL, user, target)
 
 /obj/structure/bloodsucker/vassalrack/proc/do_torture(mob/living/user, mob/living/carbon/target, mult = 1, tool = null)
@@ -463,14 +462,11 @@
 		balloon_alert(user, "target has no mind!")
 		return VASSALIZATION_BANNED
 
+	if(HAS_TRAIT(target, TRAIT_MINDSHIELD))
+		return VASSALIZATION_BANNED
+
 	var/datum/antagonist/bloodsucker/bloodsuckerdatum = IS_BLOODSUCKER(user)
 	return bloodsuckerdatum.AmValidAntag(target)
-
-/obj/structure/bloodsucker/vassalrack/proc/remove_loyalties(mob/living/target)
-	// Find Mind Implant & Destroy
-	for(var/obj/item/implant/implant as anything in target.implants)
-		if(istype(implant, /obj/item/implant/mindshield) && implant.removed(target, silent = TRUE))
-			qdel(implant)
 
 /obj/structure/bloodsucker/vassalrack/proc/reset_progress()
 	convert_progress = initial(convert_progress)
@@ -483,7 +479,7 @@
 /obj/structure/bloodsucker/candelabrum
 	name = "candelabrum"
 	desc = "It burns slowly, but doesn't radiate any heat."
-	icon = 'monkestation/icons/bloodsuckers/vamp_obj.dmi'
+	icon = 'icons/bloodsuckers/vamp_obj.dmi'
 	icon_state = "candelabrum"
 	base_icon_state = "candelabrum"
 	light_color = "#66FFFF"
@@ -576,7 +572,7 @@
 /obj/structure/bloodsucker/bloodthrone
 	name = "wicked throne"
 	desc = "Twisted metal shards jut from the arm rests. Very uncomfortable looking. It would take a masochistic sort to sit on this jagged piece of furniture."
-	icon = 'monkestation/icons/bloodsuckers/vamp_obj_64.dmi'
+	icon = 'icons/bloodsuckers/vamp_obj_64.dmi'
 	icon_state = "throne"
 	buckle_lying = 0
 	anchored = FALSE
@@ -611,7 +607,7 @@
 
 // Armrests
 /obj/structure/bloodsucker/bloodthrone/proc/GetArmrest()
-	return mutable_appearance('monkestation/icons/bloodsuckers/vamp_obj_64.dmi', "thronearm")
+	return mutable_appearance('icons/bloodsuckers/vamp_obj_64.dmi', "thronearm")
 
 /obj/structure/bloodsucker/bloodthrone/proc/update_armrest()
 	if(has_buckled_mobs())

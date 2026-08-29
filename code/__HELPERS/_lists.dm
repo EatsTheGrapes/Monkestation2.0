@@ -68,6 +68,8 @@
 #define LAZYACCESS(L, I) (L ? (isnum(I) ? (I > 0 && I <= length(L) ? L[I] : null) : L[I]) : null)
 ///Sets the item K to the value V, if the list is null it will initialize it
 #define LAZYSET(L, K, V) if(!L) { L = list(); } L[K] = V;
+///Sets the item K to the value V, if the list is null it will initialize it as an alist
+#define LAZYASSOCSET(L, K, V) if(!L) { L = alist(); } L[K] = V;
 ///Sets the length of a lazylist
 #define LAZYSETLEN(L, V) if (!L) { L = list(); } L.len = V;
 ///Returns the length of the list
@@ -522,7 +524,7 @@
  * C would have a 10% chance of being picked,
  * and D would have a 0% chance of being picked.
  */
-/proc/pick_weight(list/list_to_pick) // monkestation edit: port superior pick_weight impl
+/proc/pick_weight(list/list_to_pick)
 	var/total = 0
 	var/item
 	for(item in list_to_pick)
@@ -560,14 +562,14 @@
  * Useful for weighted random choices (loot tables, syllables in languages, etc.)
  */
 /proc/fill_with_ones(list/list_to_pad)
-	if (!islist(list_to_pad))
+	if(!islist(list_to_pad))
 		return list_to_pad
 
 	var/list/final_list = list()
 
-	for (var/key in list_to_pad)
-		if (list_to_pad[key])
-			final_list[key] = list_to_pad[key]
+	for(var/key, key_value in list_to_pad)
+		if(key_value)
+			final_list[key] = key_value
 		else
 			final_list[key] = 1
 
@@ -1374,4 +1376,20 @@
 				&& log_1["line"] == log_2["line"]\
 				&& deep_compare_list(log_1["stack"], log_2["stack"])
 		else
+			return TRUE
+
+/proc/cycle_inplace(list/c_list) //increases the value of each object in the list by 1 and then puts the final object in the starting location of the first object
+	if(!length(c_list))
+		return
+
+	var/first_obj = c_list[1]
+	for(var/i = 1, i < length(c_list), ++i)
+		c_list[i] = c_list[i+1]
+	c_list[length(c_list)] = first_obj
+
+/// Returns TRUE if the list has any items that are in said typecache, FALSE otherwise.
+/proc/typecached_item_in_list(list/things, list/typecache)
+	. = FALSE
+	for(var/datum/thingy as anything in things)
+		if(is_type_in_typecache(thingy, typecache))
 			return TRUE

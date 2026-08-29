@@ -62,7 +62,7 @@
 	righthand_file = 'icons/mob/inhands/weapons/swords_righthand.dmi'
 	flags_1 = CONDUCT_1
 	obj_flags = UNIQUE_RENAME
-	force = 20 // MONKESTATION EDIT ORG 15
+	force = 18
 	throwforce = 10
 	demolition_mod = 0.75 //but not metal
 	w_class = WEIGHT_CLASS_BULKY
@@ -466,8 +466,8 @@
 /obj/item/melee/cleric_mace
 	name = "cleric mace"
 	desc = "The grandson of the club, yet the grandfather of the baseball bat. Most notably used by holy orders in days past."
-	icon = 'icons/obj/weapons/cleric_mace.dmi'
-	icon_state = "default"
+	icon = 'icons/map_icons/items/_item.dmi'
+	SETUP_MAP_ICONS("default", "/obj/item/melee/cleric_mace")
 	inhand_icon_state = "default"
 	worn_icon_state = "default_worn"
 

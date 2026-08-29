@@ -76,9 +76,11 @@
 		/obj/item/wrench,
 		/obj/item/spess_knife,
 		/obj/item/melee/sickly_blade/lock,
-		/obj/item/clockwork/replica_fabricator, //monkestation edit
-		/obj/item/clockwork/clockwork_slab, //monkestation edit
-		/obj/item/holotool, //monkestation edit
+		/obj/item/clockwork/replica_fabricator,
+		/obj/item/clockwork/clockwork_slab,
+		/obj/item/holotool,
+		/obj/item/gun/energy/plasmacutter,
+		/obj/item/rwd,
 	))
 
 /obj/item/storage/belt/utility/chief
@@ -95,10 +97,9 @@
 	SSwardrobe.provide_type(/obj/item/screwdriver/power, src)
 	SSwardrobe.provide_type(/obj/item/crowbar/power, src)
 	SSwardrobe.provide_type(/obj/item/weldingtool/experimental, src)
-	SSwardrobe.provide_type(/obj/item/multitool, src)
+	SSwardrobe.provide_type(/obj/item/multitool/tricorder, src)
 	SSwardrobe.provide_type(/obj/item/stack/cable_coil, src)
 	SSwardrobe.provide_type(/obj/item/extinguisher/mini, src)
-	SSwardrobe.provide_type(/obj/item/analyzer, src)
 
 /obj/item/storage/belt/utility/chief/full/get_types_to_preload()
 	var/list/to_preload = list() //Yes this is a pain. Yes this is the point
@@ -106,8 +107,7 @@
 	to_preload += /obj/item/crowbar/power
 	to_preload += /obj/item/weldingtool/experimental
 	to_preload += /obj/item/extinguisher/mini
-	to_preload += /obj/item/analyzer
-	to_preload += /obj/item/multitool
+	to_preload += /obj/item/multitool/tricorder
 	to_preload += /obj/item/stack/cable_coil
 	return to_preload
 
@@ -257,6 +257,7 @@
 		/obj/item/reagent_containers/syringe,
 		/obj/item/retractor,
 		/obj/item/scalpel,
+		/obj/item/breathing_bag,
 		/obj/item/shears,
 		/obj/item/stack/medical,
 		/obj/item/stack/sticky_tape, //surgical tape
@@ -269,9 +270,10 @@
 		/obj/item/surgicaldrill,
 		/obj/item/tank/internals/emergency_oxygen,
 		/obj/item/wrench/medical,
-		/obj/item/device/antibody_scanner, //monkestation addition
+		/obj/item/device/antibody_scanner,
 		/obj/item/storage/lockbox/vialbox,
-	) + typesof(/obj/item/reagent_containers/cup/vial))
+		/obj/item/gps,
+	) + typesof(/obj/item/reagent_containers/chemcanister))
 
 /obj/item/storage/belt/medical/paramedic
 	name = "EMT belt"
@@ -350,7 +352,7 @@
 	SSwardrobe.provide_type(/obj/item/pinpointer/crew, src)
 	SSwardrobe.provide_type(/obj/item/scalpel/advanced, src)
 	SSwardrobe.provide_type(/obj/item/retractor/advanced, src)
-	SSwardrobe.provide_type(/obj/item/stack/medical/bone_gel, src)
+	SSwardrobe.provide_type(/obj/item/blood_filter/advanced, src)
 	SSwardrobe.provide_type(/obj/item/cautery/advanced, src)
 	SSwardrobe.provide_type(/obj/item/surgical_drapes, src)
 	update_appearance()
@@ -361,7 +363,7 @@
 	to_preload += /obj/item/pinpointer/crew
 	to_preload += /obj/item/scalpel/advanced
 	to_preload += /obj/item/retractor/advanced
-	to_preload += /obj/item/stack/medical/bone_gel
+	to_preload += /obj/item/blood_filter/advanced
 	to_preload += /obj/item/cautery/advanced
 	to_preload += /obj/item/surgical_drapes
 	return to_preload
@@ -385,9 +387,9 @@
 		/obj/item/clothing/glasses,
 		/obj/item/clothing/gloves,
 		/obj/item/flashlight/seclite,
-		/obj/item/citationinator, //monkestation edit
+		/obj/item/citationinator,
 		/obj/item/food/donut,
-		/obj/item/food/spaghetti/security, //monkestation change: tactical belt spaghetti
+		/obj/item/food/spaghetti/security,
 		/obj/item/grenade,
 		/obj/item/holosign_creator/security,
 		/obj/item/knife/combat,
@@ -396,7 +398,11 @@
 		/obj/item/reagent_containers/spray/pepper,
 		/obj/item/restraints/handcuffs,
 		/obj/item/restraints/legcuffs/bola,
-		/obj/item/stock_parts/power_store/cell/microfusion, //monkestation edit
+		/obj/item/stock_parts/power_store/cell/microfusion,
+		/obj/item/gps,
+		/obj/item/storage/fancy/cigarettes,
+		/obj/item/lighter,
+		/obj/item/taperecorder,
 	))
 
 /obj/item/storage/belt/security/full/PopulateContents()
@@ -409,12 +415,27 @@
 
 /obj/item/storage/belt/security/webbing
 	name = "security webbing"
-	desc = "Unique and versatile chest rig, can hold security gear."
+	desc = "Unique and versatile chest rig, can hold security gear. This one has limited polychromatic tech."
 	icon_state = "securitywebbing"
 	inhand_icon_state = "securitywebbing"
 	worn_icon_state = "securitywebbing"
 	content_overlays = FALSE
-	custom_premium_price = PAYCHECK_COMMAND * 2 //monkestation edit: 3 to 2
+	custom_premium_price = PAYCHECK_COMMAND * 2
+	uses_advanced_reskins = TRUE
+	unique_reskin = list(
+		"Security Grey" = list(
+			RESKIN_ICON_STATE = "securitywebbing",
+			RESKIN_WORN_ICON_STATE = "securitywebbing",
+		),
+		"Security Black" = list(
+			RESKIN_ICON_STATE = "securitywebbing2",
+			RESKIN_WORN_ICON_STATE = "securitywebbing2",
+		),
+		"Security White" = list(
+			RESKIN_ICON_STATE = "securitywebbing3",
+			RESKIN_WORN_ICON_STATE = "securitywebbing3",
+		),
+	)
 
 /obj/item/storage/belt/security/webbing/Initialize(mapload)
 	. = ..()
@@ -430,9 +451,9 @@
 
 /obj/item/storage/belt/mining/Initialize(mapload)
 	. = ..()
-	atom_storage.max_slots = 6
+	atom_storage.max_slots = 7
 	atom_storage.max_specific_storage = WEIGHT_CLASS_NORMAL
-	atom_storage.max_total_storage = 20
+	atom_storage.max_total_storage = 24
 	atom_storage.set_holdable(list(
 		/obj/item/analyzer,
 		/obj/item/clothing/gloves,
@@ -472,16 +493,16 @@
 		/obj/item/wirecutters,
 		/obj/item/wrench,
 		/obj/item/wormhole_jaunter,
-		/obj/item/trench_tool, //monkestation edit
-		/obj/item/cargo_teleporter, //monkestation edit
-		/obj/item/storage/box/kinetic, //monkestation edit
-		/obj/item/ammo_box/magazine/pksmgmag, //monkestation edit
-		/obj/item/ammo_casing/shotgun/kinetic, //monkestation edit
-		/obj/item/ammo_casing/shotgun/kinetic/rockbreaker, //monkestation edit
-		/obj/item/ammo_casing/shotgun/kinetic/sniperslug, //monkestation edit
-		/obj/item/storage/box/kinetic/shotgun, //monkestation edit
-		/obj/item/storage/box/kinetic/shotgun/rockbreaker, //monkestation edit
-		/obj/item/storage/box/kinetic/shotgun/sniperslug, //monkestation edit
+		/obj/item/trench_tool,
+		/obj/item/cargo_teleporter,
+		/obj/item/storage/box/kinetic,
+		/obj/item/ammo_box/magazine/pksmgmag,
+		/obj/item/ammo_casing/shotgun/kinetic,
+		/obj/item/ammo_casing/shotgun/kinetic/rockbreaker,
+		/obj/item/ammo_casing/shotgun/kinetic/sniperslug,
+		/obj/item/storage/box/kinetic/shotgun,
+		/obj/item/storage/box/kinetic/shotgun/rockbreaker,
+		/obj/item/storage/box/kinetic/shotgun/sniperslug,
 		/obj/item/ammo_box/magazine/autoshotgun,
 		/obj/item/ammo_casing/shotgun/hydrakinetic,
 		/obj/item/storage/box/kinetic/autoshotgun,
@@ -496,15 +517,15 @@
 		/obj/item/ammo_box/govmining,
 		/obj/item/storage/box/kinetic/govmining,
 		/obj/item/ammo_casing/minerjdj,
-		/obj/item/ammo_box/advanced/s12gauge/hunter, //monkestation edit
-		/obj/item/ammo_casing/shotgun/hunter, //monkestation edit
+		/obj/item/ammo_box/advanced/s12gauge/hunter,
+		/obj/item/ammo_casing/shotgun/hunter,
 		/obj/item/survivalcapsule,
 		/obj/item/survivalcapsule/luxury,
 		/obj/item/survivalcapsule/luxuryelite,
 		/obj/item/survivalcapsule/bathroom,
 		/obj/item/chasm_filler,
 		/obj/item/skeleton_key,
-		/obj/item/grenade/c4/explosivecharge, //monkestation edit
+		/obj/item/grenade/c4/explosivecharge,
 	))
 
 
@@ -575,11 +596,22 @@
 
 /obj/item/storage/belt/military
 	name = "chest rig"
-	desc = "A set of tactical webbing worn by Syndicate boarding parties."
+	desc = "A set of tactical webbing worn by Syndicate boarding parties. This one comes with limited polychromatic tech!"
 	icon_state = "militarywebbing"
 	inhand_icon_state = "militarywebbing"
 	worn_icon_state = "militarywebbing"
 	resistance_flags = FIRE_PROOF
+	uses_advanced_reskins = TRUE
+	unique_reskin = list(
+		"Grey" = list(
+			RESKIN_ICON_STATE = "militarywebbing",
+			RESKIN_WORN_ICON_STATE = "militarywebbing",
+		),
+		"Black" = list(
+			RESKIN_ICON_STATE = "militarywebbing2",
+			RESKIN_WORN_ICON_STATE = "militarywebbing2",
+		),
+	)
 
 /obj/item/storage/belt/military/Initialize(mapload)
 	. = ..()
@@ -640,6 +672,8 @@
 	inhand_icon_state = "security"
 	worn_icon_state = "security"
 	content_overlays = TRUE
+	uses_advanced_reskins = FALSE
+	unique_reskin = null
 
 /obj/item/storage/belt/military/abductor/full/PopulateContents()
 	new /obj/item/screwdriver/abductor(src)
@@ -656,6 +690,8 @@
 	icon_state = "military"
 	inhand_icon_state = "security"
 	worn_icon_state = "military"
+	uses_advanced_reskins = FALSE
+	unique_reskin = null
 
 /obj/item/storage/belt/military/assault
 	name = "assault belt"
@@ -663,6 +699,8 @@
 	icon_state = "assaultbelt"
 	inhand_icon_state = "security"
 	worn_icon_state = "assault"
+	uses_advanced_reskins = FALSE
+	unique_reskin = null
 
 /obj/item/storage/belt/military/assault/Initialize(mapload)
 	. = ..()
@@ -742,6 +780,9 @@
 		W.max_charges = initial(W.max_charges)
 		W.charges = W.max_charges
 
+/obj/item/storage/belt/wands/wizard/PopulateContents()
+	new /obj/effect/spawner/set_selector/wand_belt(src)
+
 /obj/item/storage/belt/janitor
 	name = "janibelt"
 	desc = "A belt used to hold most janitorial supplies."
@@ -769,6 +810,7 @@
 		/obj/item/reagent_containers/spray,
 		/obj/item/soap,
 		/obj/item/wirebrush,
+		/obj/item/access_key,
 	))
 
 /obj/item/storage/belt/janitor/full/PopulateContents()
@@ -874,7 +916,7 @@
 	name = "sabre sheath"
 	desc = "An ornate sheath designed to hold an officer's blade."
 	icon_state = "sheath"
-	icon_state_preview = "sheath-sabre" // monkestation edit: add preview icon state
+	icon_state_preview = "sheath-sabre"
 	inhand_icon_state = "sheath"
 	worn_icon_state = "sheath"
 	w_class = WEIGHT_CLASS_BULKY

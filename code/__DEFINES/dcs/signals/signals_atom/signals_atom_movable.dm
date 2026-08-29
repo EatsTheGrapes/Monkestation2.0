@@ -123,3 +123,10 @@
 #define COMSIG_MOVABLE_CHASM_DROPPED "movable_chasm_dropped"
 	/// Stop it from actually dropping into the chasm
 	#define COMPONENT_NO_CHASM_DROP (1<<0)
+
+/// Sent to movables when they are being stolen by a spy: (mob/living/spy, datum/spy_bounty/bounty)
+#define COMSIG_MOVABLE_SPY_STEALING "movable_spy_stealing"
+
+///from base of /atom/movable/living/can_track(): (mob/user)
+#define COMSIG_MOVABLE_CAN_TRACK "movable_cantrack"
+	#define COMPONENT_CANT_TRACK (1<<0)

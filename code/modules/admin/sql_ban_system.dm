@@ -341,6 +341,7 @@
 				ROLE_MIND_TRANSFER,
 				ROLE_POSIBRAIN,
 				ROLE_SENTIENCE,
+				ROLE_HOLY_SUMMONED,
 			),
 			"Antagonist Positions" = list(
 				ROLE_PLAGUERAT,
@@ -385,6 +386,7 @@
 				ROLE_FORBIDDENCALLING,
 				ROLE_WISHGRANTER_AVATAR,
 				ROLE_WIZARD,
+				ROLE_SPY,
 				BAN_OPFOR,
 			),
 		)
@@ -567,7 +569,7 @@
 	duration = text2num(duration)
 	if (!(interval in list("SECOND", "MINUTE", "HOUR", "DAY", "WEEK", "MONTH", "YEAR")))
 		interval = "MINUTE"
-	var/time_message = "[duration] [lowertext(interval)]" //no DisplayTimeText because our duration is of variable interval type
+	var/time_message = "[duration] [LOWER_TEXT(interval)]" //no DisplayTimeText because our duration is of variable interval type
 	if(duration > 1) //pluralize the interval if necessary
 		time_message += "s"
 	var/is_server_ban = (roles_to_ban[1] == "Server")

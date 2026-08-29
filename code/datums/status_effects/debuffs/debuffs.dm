@@ -45,6 +45,10 @@
 	///Boolean that, if TRUE, will prevent the person getting this effect from dropping items.
 	var/prevent_drop = FALSE
 
+/datum/status_effect/incapacitating/knockdown/on_creation(mob/living/new_owner, set_duration, prevent_drop)
+	src.prevent_drop = prevent_drop
+	return ..()
+
 /datum/status_effect/incapacitating/knockdown/on_apply()
 	. = ..()
 	if(!.)
@@ -656,7 +660,7 @@
 /datum/status_effect/trance/proc/hypnotize(datum/source, list/hearing_args)
 	SIGNAL_HANDLER
 
-	if(!owner.can_hear() || owner == hearing_args[HEARING_SPEAKER])
+	if(HAS_TRAIT(owner, TRAIT_DEAF) || owner == hearing_args[HEARING_SPEAKER])
 		return
 
 	var/mob/hearing_speaker = hearing_args[HEARING_SPEAKER]

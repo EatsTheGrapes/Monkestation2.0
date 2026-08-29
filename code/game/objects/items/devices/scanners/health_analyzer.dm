@@ -32,6 +32,8 @@
 	var/scanmode = SCANMODE_HEALTH
 	/// Advanced health analyzer
 	var/advanced = FALSE
+	/// Scans from a distance
+	var/works_from_distance = FALSE
 	/// If this analyzer will give a bonus to wound treatments apon woundscan.
 	var/give_wound_treatment_bonus = FALSE
 	var/last_scan_text
@@ -344,7 +346,7 @@
 		var/list/cyberimps
 		for(var/obj/item/organ/internal/cyberimp/cyberimp in humantarget.organs)
 			if(IS_ROBOTIC_ORGAN(cyberimp) && !(cyberimp.organ_flags & ORGAN_HIDDEN))
-				LAZYADD(cyberimps, cyberimp.get_examine_string(user))
+				LAZYADD(cyberimps, cyberimp.examine_title(user))
 		if(LAZYLEN(cyberimps))
 			if(!render)
 				render_list += "<hr>"
@@ -392,20 +394,38 @@
 		render_list += "<span class='info ml-1'>[body_temperature_message]</span>\n"
 
 	// Blood Level
-	// NON-MODULE CHANGE
-	if(target.has_dna() && target.get_blood_type())
-		if(iscarbon(target))
-			var/mob/living/carbon/bleeder = target
-			if(bleeder.is_bleeding())
-				render_list += "<span class='alert ml-1'><b>Subject is bleeding!</b></span>\n"
+	var/datum/blood_type/blood_type = target.get_bloodtype()
+	if(blood_type)
 		var/blood_percent = round((target.blood_volume / BLOOD_VOLUME_NORMAL) * 100)
-		var/blood_type = "[target.get_blood_type() || "None"]"
+		var/blood_type_format
+		var/level_format
 		if(target.blood_volume <= BLOOD_VOLUME_SAFE && target.blood_volume > BLOOD_VOLUME_OKAY)
-			render_list += "<span class='alert ml-1'>Blood level: LOW [blood_percent] %, [target.blood_volume] cl,</span> [span_info("type: [blood_type]")]\n"
+			level_format = "LOW [blood_percent]%, [target.blood_volume] cl"
+			if(blood_type.restoration_chem)
+				level_format = conditional_tooltip(level_format, "Recommendation: [blood_type.restoration_chem::name] supplement.", tochat)
 		else if(target.blood_volume <= BLOOD_VOLUME_OKAY)
-			render_list += "<span class='alert ml-1'>Blood level: <b>CRITICAL [blood_percent] %</b>, [target.blood_volume] cl,</span> [span_info("type: [blood_type]")]\n"
+			level_format = "<b>CRITICAL [blood_percent]%</b>, [target.blood_volume] cl"
+			var/recommendation = list()
+			if(blood_type.restoration_chem)
+				recommendation += "[blood_type.restoration_chem::name] supplement"
+			if(blood_type.restoration_chem == /datum/reagent/iron)
+				recommendation += "[/datum/reagent/medicine/salglu_solution::name]"
+			if(length(recommendation))
+				recommendation += "[blood_type.get_blood_name()] transufion"
+			else
+				recommendation += "immediate [blood_type.get_blood_name()] transufion"
+			level_format = conditional_tooltip(level_format, "Recommendation: [english_list(recommendation, and_text = " or ")].", tochat)
 		else
-			render_list += "<span class='info ml-1'>Blood level: [blood_percent] %, [target.blood_volume] cl, type: [blood_type]</span>\n"
+			level_format = "[blood_percent]%, [target.blood_volume] cl"
+
+		blood_type_format = "type: [blood_type]"
+		if(tochat && length(blood_type.compatible_types))
+			var/list/compatible_types_readable = list()
+			for(var/datum/blood_type/comp_blood_type as anything in blood_type.compatible_types)
+				compatible_types_readable |= initial(comp_blood_type.name)
+			blood_type_format = span_tooltip("Can receive from types [english_list(compatible_types_readable)].", blood_type_format)
+
+		render_list += "<span class='[target.blood_volume < BLOOD_VOLUME_SAFE ? "alert" : "info"] ml-1'>[blood_type.get_blood_name()] level: [level_format],</span> <span class='info'>[blood_type_format]</span><br>"
 
 	// Blood Alcohol Content
 	var/blood_alcohol_content = target.get_blood_alcohol_content()
@@ -418,9 +438,10 @@
 				render_list += "<span class='alert ml-1'>Dropping levels of Alcoholic byproducts. Consumption of Alcohol advised.</span><br>"
 	if(blood_alcohol_content > 0)
 		if(blood_alcohol_content >= 0.21 && isnull(drinking_good))
-			render_list += "<span class='alert ml-1'>Blood alcohol content: <b>CRITICAL [blood_alcohol_content]%</b></span><br>"
+			// "Oil alcohol content" is kinda funny if you think about it from a technical standpoint
+			render_list += "<span class='alert ml-1'>[blood_type?.get_blood_name() || "Blood"] alcohol content: <b>CRITICAL [blood_alcohol_content]%</b></span><br>"
 		else
-			render_list += "<span class='info ml-1'>Blood alcohol content: [blood_alcohol_content]%</span><br>"
+			render_list += "<span class='info ml-1'>[blood_type?.get_blood_name() || "Blood"] alcohol content: [blood_alcohol_content]%</span><br>"
 
 	for(var/datum/disease/disease as anything in target.diseases)
 		if(istype(disease, /datum/disease/acute))
@@ -471,9 +492,9 @@
 				render_block += "<span class='notice ml-2'>[round(reagent.volume, 0.001)] units of [reagent.name][reagent.overdosed ? "</span> - [span_boldannounce("OVERDOSING")]" : ".</span>"]\n"
 
 		if(!length(render_block)) //If no VISIBLY DISPLAYED reagents are present, we report as if there is nothing.
-			render_list += "<span class='notice ml-1'>Subject contains no reagents in their blood.</span>\n"
+			render_list += "<span class='notice ml-1'>Subject contains no reagents in their [LOWER_TEXT(target.get_bloodtype()?.get_blood_name()) || "blood"]stream.</span><br>"
 		else
-			render_list += "<span class='notice ml-1'>Subject contains the following reagents in their blood:</span>\n"
+			render_list += "<span class='notice ml-1'>Subject contains the following reagents in their [LOWER_TEXT(target.get_bloodtype()?.get_blood_name()) || "blood"]stream:</span><br>"
 			render_list += render_block //Otherwise, we add the header, reagent readouts, and clear the readout block for use on the stomach.
 			render_block.Cut()
 
@@ -530,11 +551,57 @@
 	to_chat(user, mode == SCANNER_VERBOSE ? "The scanner now shows specific limb damage." : "The scanner no longer shows limb damage.")
 	return CLICK_ACTION_SUCCESS
 
+	// Long range
+/obj/item/healthanalyzer/ranged_interact_with_atom(atom/interacting_with, mob/living/user, list/modifiers)
+	if(!works_from_distance)
+		return NONE
+
+	if(!istype(interacting_with, /mob/living))
+		return NONE
+
+	if(HAS_TRAIT(interacting_with, TRAIT_COMBAT_MODE_SKIP_INTERACTION) || !can_see(user, interacting_with, 15))
+		return NONE
+
+	interacting_with.Beam(user, icon = 'icons/effects/beam_advanced.dmi', icon_state = "med_scan", time = 0.5 SECONDS)
+	playsound(src, 'sound/items/pip.ogg', 25, FALSE, 2)
+	attack(interacting_with, user)
+
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/healthanalyzer/ranged_interact_with_atom_secondary(atom/interacting_with, mob/living/user, list/modifiers)
+	if(!works_from_distance)
+		return NONE
+
+	if(!istype(interacting_with, /mob/living))
+		return NONE
+
+	if(HAS_TRAIT(interacting_with, TRAIT_COMBAT_MODE_SKIP_INTERACTION) || !can_see(user, interacting_with, 15))
+		return NONE
+
+	interacting_with.Beam(user, icon = 'icons/effects/beam_advanced.dmi', icon_state = "med_scan", time = 0.5 SECONDS)
+	playsound(src, 'sound/items/pip.ogg', 25, FALSE, 2)
+	attack_secondary(interacting_with, user)
+
+	return ITEM_INTERACT_SUCCESS
+
+///////////////////////////////////////////
+
+/obj/item/healthanalyzer/range
+	name = "remote health analyzer"
+	desc = "A hand-held medical scanner for detecting patient's vital signs from a distance. Limited edition from NT medical department."
+	icon = 'icons/obj/advanced_device.dmi'
+	icon_state = "health_range"
+	works_from_distance = TRUE
+	custom_premium_price = PAYCHECK_CREW * 6
+
 /obj/item/healthanalyzer/advanced
 	name = "advanced health analyzer"
+	icon = 'icons/obj/advanced_device.dmi'
 	icon_state = "health_adv"
 	desc = "A hand-held body scanner able to distinguish vital signs of the subject with high accuracy."
+	works_from_distance = TRUE
 	advanced = TRUE
+	give_wound_treatment_bonus = TRUE
 
 #define AID_EMOTION_NEUTRAL "neutral"
 #define AID_EMOTION_HAPPY "happy"
@@ -549,11 +616,16 @@
 
 	var/render_list = ""
 	var/advised = FALSE
+
+	var/advanced = scanner.give_wound_treatment_bonus
+	if(!advanced && patient.has_reagent(/datum/reagent/inverse/technetium))
+		advanced = TRUE
+
 	for(var/obj/item/bodypart/wounded_part as anything in patient.get_wounded_bodyparts())
 		render_list += "<span class='alert ml-1'><b>Warning: Physical trauma[LAZYLEN(wounded_part.wounds) > 1? "s" : ""] detected in [wounded_part.plaintext_zone]</b>"
 		for(var/datum/wound/current_wound as anything in wounded_part.wounds)
 			render_list += "<div class='ml-2'>[simple_scan ? current_wound.get_simple_scanner_description() : current_wound.get_scanner_description()]</div>\n"
-			if (scanner.give_wound_treatment_bonus)
+			if(advanced)
 				ADD_TRAIT(current_wound, TRAIT_WOUND_SCANNED, ANALYZER_TRAIT)
 				if(!advised)
 					to_chat(user, span_notice("You notice how bright holo-images appear over your [(length(wounded_part.wounds) || length(patient.get_wounded_bodyparts()) ) > 1 ? "various wounds" : "wound"]. They seem to be filled with helpful information, this should make treatment easier!"))
@@ -577,6 +649,11 @@
 
 //Cyborgs can use an integrated health analyzer even if they cant see
 /obj/item/healthanalyzer/cyborg
+	name = "remote health analyzer"
+	desc = "A hand-held medical scanner for detecting patient's vital signs from a distance. Limited edition from NT medical department."
+	icon = 'icons/obj/advanced_device.dmi'
+	icon_state = "health_range"
+	works_from_distance = TRUE
 
 /obj/item/healthanalyzer/cyborg/attack_self(mob/user)
 	if(!user.can_read(src, READING_CHECK_LITERACY))
@@ -627,21 +704,6 @@
 
 	chemscan(user, victim)
 	return SECONDARY_ATTACK_CANCEL_ATTACK_CHAIN
-
-/obj/item/healthanalyzer/cyborg/proc/upgrade() //so that it wont get moved upon upgrade in the cyborgs toolkit
-	advanced = TRUE
-	name = /obj/item/healthanalyzer/advanced::name
-	desc = /obj/item/healthanalyzer/advanced::desc
-	icon_state = /obj/item/healthanalyzer/advanced::icon_state
-	update_appearance()
-
-/obj/item/healthanalyzer/cyborg/proc/downgrade()
-	advanced = initial(advanced)
-	name = initial(name)
-	desc = initial(desc)
-	icon_state = initial(icon_state)
-	update_appearance()
-
 
 /obj/item/healthanalyzer/simple
 	name = "wound analyzer"

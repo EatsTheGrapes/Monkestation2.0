@@ -1,8 +1,6 @@
 SUBSYSTEM_DEF(statpanels)
 	name = "Stat Panels"
 	wait = 0.4 SECONDS
-	init_order = INIT_ORDER_STATPANELS
-	init_stage = INITSTAGE_EARLY
 	priority = FIRE_PRIORITY_STATPANEL
 	runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY
 	flags = SS_NO_INIT
@@ -37,12 +35,18 @@ SUBSYSTEM_DEF(statpanels)
 		if(cached)
 			global_data += "Next Map: [cached.map_name]"
 
+		var/active_players = get_active_player_count(alive_check = FALSE, afk_check = TRUE, human_check = FALSE) //This is a list of all active players, including players who are dead
+		var/observing_players = length(GLOB.current_observers_list) //This is a list of all players that started as an observer-- dead and lobby players are not included.
+		var/timeinworld = "[time2text(world.timeofday, "DD of Month,")] [CURRENT_STATION_YEAR]"
+
 		global_data += list(
 			"Storyteller: [!SSgamemode.secret_storyteller && SSgamemode.current_storyteller ? SSgamemode.current_storyteller.name : "Secret"]",
 			"Round ID: [GLOB.round_id ? GLOB.round_id : "NULL"]",
+			"Connected: [length(GLOB.clients)] | Active: [active_players] | Observing: [observing_players]",
+			" ",
 			"Server Time: [time2text(world.timeofday, "YYYY-MM-DD hh:mm:ss", world.timezone)]",
 			"Round Time: [ROUND_TIME()]",
-			"Station Time: [station_time_timestamp()]",
+			"Station Time: [station_time_timestamp()], [timeinworld]",
 			"Time Dilation: [round(SStime_track.time_dilation_current,1)]% AVG:([round(SStime_track.time_dilation_avg_fast,1)]%, [round(SStime_track.time_dilation_avg,1)]%, [round(SStime_track.time_dilation_avg_slow,1)]%)",
 		)
 
@@ -232,7 +236,7 @@ SUBSYSTEM_DEF(statpanels)
 #endif
 	for(var/datum/controller/subsystem/sub_system as anything in Master.subsystems)
 		mc_data[++mc_data.len] = list("\[[sub_system.state_letter()]][sub_system.name]", sub_system.stat_entry(), text_ref(sub_system))
-	mc_data[++mc_data.len] = list("Camera Net", "Cameras: [GLOB.cameranet.cameras.len] | Chunks: [GLOB.cameranet.chunks.len]", text_ref(GLOB.cameranet))
+	mc_data[++mc_data.len] = list("Camera Net", "Cameras: [SScameras.cameras.len] | Chunks: [SScameras.chunks.len]", text_ref(SScameras))
 
 ///immediately update the active statpanel tab of the target client
 /datum/controller/subsystem/statpanels/proc/immediate_send_stat_data(client/target)

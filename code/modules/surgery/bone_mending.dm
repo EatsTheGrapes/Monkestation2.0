@@ -28,7 +28,6 @@
 
 
 ///// Repair Compound Fracture (Critical)
-///// Repair Compound Fracture (Critical)
 /datum/surgery/repair_bone_compound
 	name = "Repair Compound Fracture"
 	surgery_flags = SURGERY_REQUIRE_RESTING | SURGERY_REQUIRE_LIMB | SURGERY_REQUIRES_REAL_LIMB
@@ -62,7 +61,7 @@
 /datum/surgery_step/repair_bone_hairline
 	name = "repair hairline fracture (bonesetter/bone gel/tape)"
 	implements = list(
-		/obj/item/bonesetter = 100,
+		TOOL_BONESET = 100,
 		/obj/item/stack/medical/bone_gel = 100,
 		/obj/item/stack/sticky_tape/surgical = 100,
 		/obj/item/stack/sticky_tape/super = 50,
@@ -112,7 +111,7 @@
 /datum/surgery_step/reset_compound_fracture
 	name = "reset bone (bonesetter)"
 	implements = list(
-		/obj/item/bonesetter = 100,
+		TOOL_BONESET = 100,
 		/obj/item/stack/sticky_tape/surgical = 60,
 		/obj/item/stack/sticky_tape/super = 40,
 		/obj/item/stack/sticky_tape = 20)
@@ -157,6 +156,7 @@
 #define IMPLEMENTS_THAT_FIX_BONES list( \
 	/obj/item/stack/medical/bone_gel = 100, \
 	/obj/item/stack/sticky_tape/surgical = 100, \
+	/obj/item/blood_filter/advanced = 100, \
 	/obj/item/stack/sticky_tape/super = 50, \
 	/obj/item/stack/sticky_tape = 30, \
 )
@@ -286,5 +286,20 @@
 	qdel(surgery.operated_wound)
 
 	return ..()
+
+/datum/surgery/repair_broken_rib
+	name = "Repair fractured rib (hairline)"
+	surgery_flags = SURGERY_REQUIRE_RESTING | SURGERY_REQUIRE_LIMB | SURGERY_REQUIRES_REAL_LIMB
+	targetable_wound = /datum/wound/blunt/bone/rib_break
+	possible_locs = list(
+		BODY_ZONE_CHEST,
+	)
+	steps = list(
+		/datum/surgery_step/incise,
+		/datum/surgery_step/retract_skin,
+		/datum/surgery_step/clamp_bleeders,
+		/datum/surgery_step/repair_bone_hairline,
+		/datum/surgery_step/close,
+	)
 
 #undef IMPLEMENTS_THAT_FIX_BONES

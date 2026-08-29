@@ -248,6 +248,13 @@
 	/// Does this use the advanced reskinning setup?
 	var/uses_advanced_reskins = FALSE
 
+	/// If specified, the pickup sound will use this mixer channel.
+	var/pickup_mixer_channel = CHANNEL_SOUND_EFFECTS
+	/// If specified, the drop sound will use this mixer channel.
+	var/drop_mixer_channel = CHANNEL_SOUND_EFFECTS
+	/// If specified, the equip sound will use this mixer channel.
+	var/equip_mixer_channel = CHANNEL_SOUND_EFFECTS
+
 /obj/item/Initialize(mapload)
 	if(attack_verb_continuous)
 		attack_verb_continuous = string_list(attack_verb_continuous)
@@ -440,27 +447,21 @@
 	abstract_move(null)
 	forceMove(T)
 
-/obj/item/examine(mob/user) //This might be spammy. Remove?
+/obj/item/examine_tags(mob/user)
+	var/list/parent_tags = ..()
+	parent_tags.Insert(1, weight_class_to_text(w_class)) // To make size display first, otherwise it looks goofy
+	. = parent_tags
+	.[weight_class_to_text(w_class)] = weight_class_to_tooltip(w_class)
+
+/obj/item/examine_descriptor(mob/user)
+	return "item"
+
+/obj/item/examine(mob/user)
+	// lazily initialize the weapon description element if it hasn't been already
 	if(!(item_flags & WEAPON_DESCRIPTION_INITIALIZED))
 		add_weapon_description()
 		item_flags |= WEAPON_DESCRIPTION_INITIALIZED
-
-	. = ..()
-
-	. += "[gender == PLURAL ? "They are" : "It is"] a [weight_class_to_text(w_class)] item."
-
-	if(resistance_flags & INDESTRUCTIBLE)
-		. += "[src] seems extremely robust! It'll probably withstand anything that could happen to it!"
-	else
-		if(resistance_flags & LAVA_PROOF)
-			. += "[src] is made of an extremely heat-resistant material, it'd probably be able to withstand lava!"
-		if(resistance_flags & (ACID_PROOF | UNACIDABLE))
-			. += "[src] looks pretty robust! It'd probably be able to withstand acid!"
-		if(resistance_flags & FREEZE_PROOF)
-			. += "[src] is made of cold-resistant materials."
-		if(resistance_flags & FIRE_PROOF)
-			. += "[src] is made of fire-retardant materials."
-		return
+	return ..()
 
 /obj/item/examine_more(mob/user)
 	. = ..()
@@ -666,15 +667,12 @@
 		return
 	attack_paw(ayy, modifiers)
 
-/obj/item/attack_ai(mob/user)
-	if(istype(src.loc, /obj/item/robot_model))
-		//If the item is part of a cyborg module, equip it
-		if(!iscyborg(user))
-			return
-		var/mob/living/silicon/robot/R = user
-		if(!R.low_power_mode) //can't equip modules with an empty cell.
-			R.activate_module(src)
-			R.hud_used.update_robot_modules_display()
+/obj/item/attack_robot(mob/living/silicon/robot/user)
+	if(loc != user.model)
+		return
+	if(user.low_power_mode) //can't equip modules with an empty cell.
+		return
+	user.activate_module(src)
 
 // afterattack() and attack() prototypes moved to _onclick/item_attack.dm for consistency
 
@@ -1083,7 +1081,7 @@
 /obj/item/proc/apply_outline(outline_color = null)
 	if(((get(src, /mob) != usr) && !loc?.atom_storage && !(item_flags & IN_STORAGE)) || QDELETED(src) || isobserver(usr)) //cancel if the item isn't in an inventory, is being deleted, or if the person hovering is a ghost (so that people spectating you don't randomly make your items glow)
 		return FALSE
-	var/theme = lowertext(usr.client?.prefs?.read_preference(/datum/preference/choiced/ui_style))
+	var/theme = LOWER_TEXT(usr.client?.prefs?.read_preference(/datum/preference/choiced/ui_style))
 	if(!outline_color) //if we weren't provided with a color, take the theme's color
 		switch(theme) //yeah it kinda has to be this way
 			if("midnight")
@@ -1363,6 +1361,8 @@
  * * taker - the person trying to accept the offer
  */
 /obj/item/proc/on_offer_taken(mob/living/carbon/offerer, mob/living/carbon/taker)
+	if(!HAS_TRAIT(offerer, TRAIT_CAN_HOLD_ITEMS) && !HAS_TRAIT(src, TRAIT_BORG_GIVE) && HAS_TRAIT(taker, TRAIT_CAN_HOLD_ITEMS))
+		return TRUE // Both must be able to hold items for this to make sense.
 	if(SEND_SIGNAL(src, COMSIG_ITEM_OFFER_TAKEN, offerer, taker) & COMPONENT_OFFER_INTERRUPT)
 		return TRUE
 
@@ -1707,3 +1707,11 @@
 		target_limb = victim.get_bodypart(target_limb) || victim.bodyparts[1]
 
 	return get_embed()?.embed_into(victim, target_limb)
+
+/obj/item/proc/adjust_weight_class(amt, min_weight = WEIGHT_CLASS_TINY, max_weight = WEIGHT_CLASS_GIGANTIC)
+	if(!amt || !isnum(amt))
+		stack_trace("Attempted to adjust weight class by an invalid value ([amt])")
+		return FALSE
+	var/old_w_class = w_class
+	w_class = clamp(w_class + amt, min_weight, max_weight)
+	return w_class != old_w_class

@@ -153,14 +153,23 @@
 		deployable_type = /obj/item/clothing/head/hooded/winterhood/medical/deforest,\
 		equipped_slot = ITEM_SLOT_HEAD,\
 		action_name = "Toggle Hood",\
-		destroy_on_removal = TRUE,\
+		destroy_on_removal = FALSE,\
 		parent_icon_state_suffix = "",\
 		down_overlay_state_suffix = "", \
 	)
 
 /obj/item/clothing/head/hooded/winterhood/medical/deforest
-	name = "Hi-Vis Hood"
+	name = "Deforest Hood"
 	desc = "A high-visibility hood designed by Deforest Medical for search and rescue, wool lining and interwoven fabrics make this hood noticeably thick."
 	icon_state = "hivishood"
 	worn_icon = 'icons/mob/clothing/head/hats.dmi'
 	icon = 'icons/obj/clothing/head/hats.dmi'
+
+/obj/item/clothing/suit/toggle/labcoat/xenobiologist
+	name = "xenobiologist labcoat"
+	desc = "A suit that protects against minor chemical spills. Has a pink stripe on the shoulder."
+	icon_state = "labcoat_xeno"
+
+/obj/item/clothing/suit/toggle/labcoat/xenobiologist/Initialize(mapload)
+	. = ..()
+	allowed += /obj/item/storage/bag/xeno
