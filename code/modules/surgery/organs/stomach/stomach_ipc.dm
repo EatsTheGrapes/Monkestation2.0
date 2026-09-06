@@ -88,10 +88,6 @@
 		will_it_blend_timer = null
 	blending = FALSE
 
-/// Returns whether this stomach is still installed in the expected owner.
-/obj/item/organ/internal/stomach/synth/proc/valid_blend_owner(mob/living/carbon/stomach_owner)
-	return !QDELETED(src) && !QDELETED(stomach_owner) && owner == stomach_owner && stomach_owner.get_organ_slot(ORGAN_SLOT_STOMACH) == src
-
 ///Handles charging the synth from borg chargers
 /obj/item/organ/internal/stomach/synth/proc/on_borg_charge(datum/source, amount)
 	SIGNAL_HANDLER
@@ -113,7 +109,7 @@
 /// Begins grinding nutriment when the stomach remains installed in its owner.
 /obj/item/organ/internal/stomach/synth/proc/start_blending(mob/living/carbon/stomach_owner)
 	will_it_blend_timer = null
-	if(!valid_blend_owner(stomach_owner) || !stomach_owner.reagents.get_reagent_amount(/datum/reagent/consumable/nutriment))
+	if(QDELETED(stomach_owner) || !stomach_owner.reagents?.get_reagent_amount(/datum/reagent/consumable/nutriment))
 		return
 	blending = TRUE
 	stomach_owner.Shake(2, 2, 10 SECONDS)
@@ -123,8 +119,8 @@
 /// Converts the owner's nutriment reagent into nutrition and starts the cooldown.
 /obj/item/organ/internal/stomach/synth/proc/finish_blending(mob/living/carbon/human/stomach_owner)
 	will_it_blend_timer = null
-	if(!valid_blend_owner(stomach_owner))
-		blending = FALSE
+	blending = FALSE
+	if(QDELETED(stomach_owner) || !stomach_owner.reagents)
 		return
 	var/nutriment_amount = stomach_owner.reagents.get_reagent_amount(/datum/reagent/consumable/nutriment)
 	stomach_owner.reagents.del_reagent(/datum/reagent/consumable/nutriment)

@@ -41,11 +41,6 @@
 		return NONE
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/mod/paint/interact_with_atom_secondary(atom/interacting_with, mob/living/user, list/modifiers)
-	if(!paint_target(interacting_with, user, TRUE))
-		return NONE
-	return ITEM_INTERACT_SUCCESS
-
 /obj/item/mod/paint/ui_interact(mob/user, datum/tgui/ui)
 	if(!editing_mod)
 		return

@@ -177,13 +177,15 @@
 	if(!installed_mmi.ready_for_ipc_install(user))
 		return SURGERY_STEP_FAIL
 
-	user.visible_message(
-		"[user] starts installing \the [tool] into [target]'s [affected_bodypart.name].",
-		"You start installing \the [tool] into [target]'s [affected_bodypart.name]."
+	display_results(
+		user,
+		target,
+		span_notice("You start installing \the [tool] into [target]'s [affected_bodypart.name]."),
+		span_notice("[user] starts installing \the [tool] into [target]'s [affected_bodypart.name]."),
+		span_notice("[user] starts installing \the [tool] into [target]'s [affected_bodypart.name]."),
 	)
-	return ..()
 
-/datum/surgery_step/install_brain/success(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/surgery/surgery)
+/datum/surgery_step/install_brain/success(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/surgery/surgery, default_display_results = FALSE)
 	if(target_zone != BODY_ZONE_CHEST)
 		to_chat(user, span_warning("You can no longer access [target]'s chest cavity."))
 		return FALSE
@@ -208,15 +210,21 @@
 		user.put_in_hands(tool)
 		to_chat(user, span_warning("You can no longer install [tool] into [target]."))
 		return FALSE
-	user.visible_message(
-		span_notice("[user] has installed [tool] into [target]'s [affected_bodypart.name]."),
-		span_notice("You have installed [tool] into [target]'s [affected_bodypart.name]."),
+	display_results(
+		user,
+		target,
+		span_notice("You install [tool] into [target]'s [affected_bodypart.name]."),
+		span_notice("[user] installs [tool] into [target]'s [affected_bodypart.name]."),
+		span_notice("[user] installs [tool] into [target]'s [affected_bodypart.name]."),
 	)
 	return ..()
 
 /datum/surgery_step/install_brain/failure(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/surgery/surgery)
-	..()
-	user.visible_message(
+	display_results(
+		user,
+		target,
+		span_warning("Your hand slips, mangling the delicate connections!"),
+		span_warning("[user]'s hand slips, mangling the delicate connections!"),
 		span_warning("[user]'s hand slips!"),
-		span_warning("Your hand slips!"),
 	)
+	return FALSE
