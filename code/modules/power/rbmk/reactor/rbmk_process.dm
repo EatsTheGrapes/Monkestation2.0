@@ -98,8 +98,10 @@
 	if(outlet_open)
 		open_port_count++
 		actual_flow_rate += last_outlet_flow_rate
-	var/actual_flow_ratio = CLAMP01(actual_flow_rate / max(RBMK_INLET_RATE_MAX * max(open_port_count, 1), 1))
-	var/coolant_inventory_ratio = CLAMP01(coolant_moles / max(RBMK_COOLANT_EFFECTIVE_MOLES_TARGET, 1))
+	// Cooling capacity follows heat capacity, not raw moles, so dense coolants such as water vapor are not undervalued.
+	var/coolant_specific_heat_ratio = (coolant_heat_capacity / coolant_moles) / RBMK_COOLANT_REFERENCE_SPECIFIC_HEAT
+	var/actual_flow_ratio = CLAMP01(actual_flow_rate * coolant_specific_heat_ratio / max(RBMK_INLET_RATE_MAX * max(open_port_count, 1), 1))
+	var/coolant_inventory_ratio = CLAMP01(coolant_moles * coolant_specific_heat_ratio / max(RBMK_COOLANT_EFFECTIVE_MOLES_TARGET, 1))
 	var/minimum_exchange_ratio = RBMK_COOLANT_STAGNANT_FLOW_RATIO * max(coolant_inventory_ratio, 0.25)
 	// Only measured gas movement earns forced-flow cooling. A commanded pump
 	// with no coolant movement retains stationary conduction, but cannot fake
@@ -326,7 +328,7 @@
 	running = TRUE
 	var/control_ratio = CLAMP01(actual_control_rod_depth / RBMK_CONTROL_ROD_MAX)
 	var/flux_control_multiplier = CLAMP01(1 - control_ratio)
-	var/heat_control_multiplier = CLAMP01(1 - (control_ratio ** 1.35))
+	var/heat_control_multiplier = CLAMP01(1 - (control_ratio ** RBMK_HEAT_CONTROL_EXPONENT))
 	var/radiation_control_multiplier = max(
 		RBMK_RESIDUAL_RADIATION_MULTIPLIER,
 		CLAMP01(1 - (control_ratio ** 1.15)),
@@ -334,7 +336,7 @@
 	var/flux_modifier_multiplier = 1 + rod_flux_multiplier_bonus
 	total_flux *= flux_modifier_multiplier
 	total_flux *= flux_control_multiplier
-	total_heat *= heat_control_multiplier
+	total_heat *= heat_control_multiplier * RBMK_ROD_HEAT_OUTPUT_MULT
 	total_radiation *= radiation_control_multiplier
 	var/base_flux = clamp(total_flux * RBMK_FLUX_GAIN, 0, RBMK_MAX_FLUX)
 	var/extra_void_coefficient = update_void_coefficient()
@@ -391,8 +393,9 @@
 	temperature_coefficient = clamp(temperature_coefficient, 0, RBMK_VC_TEMP_COMPONENT_MAX)
 	var/pressure_ratio = CLAMP01(1 - (pressure / max(RBMK_PRESSURE_WARNING, 1)))
 	var/pressure_coefficient = pressure_ratio * heat_gate * RBMK_VC_PRESSURE_COMPONENT_MAX
-	var/coolant_moles = coolant_internal?.total_moles() || 0
-	var/coolant_ratio = CLAMP01(coolant_moles / max(RBMK_VC_COOLANT_MOLES_TARGET, 1))
+	// Starvation is judged by thermal mass so a full loop of water vapor is not treated like a sparse one.
+	var/coolant_thermal_moles = (coolant_internal?.heat_capacity() || 0) / RBMK_COOLANT_REFERENCE_SPECIFIC_HEAT
+	var/coolant_ratio = CLAMP01(coolant_thermal_moles / max(RBMK_VC_COOLANT_MOLES_TARGET, 1))
 	var/coolant_coefficient = (1 - coolant_ratio) * heat_gate * RBMK_VC_COOLANT_COMPONENT_MAX
 	void_coefficient = clamp(
 		temperature_coefficient + pressure_coefficient + coolant_coefficient,

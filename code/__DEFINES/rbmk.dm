@@ -47,14 +47,14 @@
 
 // Positive void coefficient
 /// Temperature contribution to the positive void coefficient.
-#define RBMK_VC_TEMP_COEFF 0.00008
+#define RBMK_VC_TEMP_COEFF 0.00003
 /// Maximum temperature contribution to the void coefficient.
 #define RBMK_VC_TEMP_COMPONENT_MAX 1.2
 /// Maximum pressure contribution to the void coefficient.
 #define RBMK_VC_PRESSURE_COMPONENT_MAX 1
 /// Maximum coolant-starvation contribution to the void coefficient.
 #define RBMK_VC_COOLANT_COMPONENT_MAX 0.8
-/// Coolant inventory at which the starvation contribution reaches zero.
+/// Coolant inventory at which the starvation contribution reaches zero, in moles of a reference gas.
 #define RBMK_VC_COOLANT_MOLES_TARGET 450
 /// Absolute upper bound for the reactor's void coefficient.
 #define RBMK_VC_MAX 3.0
@@ -63,7 +63,11 @@
 /// Base fraction of rod output added to reactor flux each machinery cycle.
 #define RBMK_FLUX_GAIN 0.8
 /// Base reactor heat gain converted to a per-second rate.
-#define RBMK_TEMP_GAIN_PER_SECOND (0.24 / RBMK_MACHINERY_PROCESS_SECONDS)
+#define RBMK_TEMP_GAIN_PER_SECOND (0.08 / RBMK_MACHINERY_PROCESS_SECONDS)
+/// Scales rod heat output so the coolant loop can hold a usable band of control-rod positions.
+#define RBMK_ROD_HEAT_OUTPUT_MULT 0.33
+/// Exponent of the control-rod heat curve; below 1 makes partial insertion suppress heat sooner.
+#define RBMK_HEAT_CONTROL_EXPONENT 0.7
 /// Passive flux decay converted to a per-second rate.
 #define RBMK_FLUX_DECAY_PER_SECOND (0.05 / RBMK_MACHINERY_PROCESS_SECONDS)
 /// Passive radiation decay converted to a per-second rate.
@@ -191,7 +195,10 @@
 /// Base vessel-to-coolant heat-exchange coefficient.
 #define RBMK_COOLANT_EXCHANGE_COEFFICIENT 0.10
 /// Maximum additional exchange coefficient supplied by coolant flow.
-#define RBMK_COOLANT_EXCHANGE_FLOW_BONUS 0.50
+#define RBMK_COOLANT_EXCHANGE_FLOW_BONUS 0.90
+/// Specific heat of the gas that the coolant flow and inventory targets are tuned around (nitrogen).
+/// Gases with a higher specific heat, such as water vapor, earn proportionally more credit.
+#define RBMK_COOLANT_REFERENCE_SPECIFIC_HEAT 20
 /// Maximum vessel temperature change during one coolant exchange.
 #define RBMK_COOLANT_MAX_CORE_TEMP_CHANGE 450
 /// Maximum coolant temperature change during one coolant exchange.
