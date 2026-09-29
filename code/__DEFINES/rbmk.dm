@@ -50,7 +50,7 @@
 #define RBMK_VC_TEMP_COEFF 0.00003
 /// Maximum temperature contribution to the void coefficient.
 #define RBMK_VC_TEMP_COMPONENT_MAX 1.2
-/// Maximum coolant-density contribution to the void coefficient.
+/// Maximum pressure contribution to the void coefficient; low pressure lets steam voids form.
 #define RBMK_VC_PRESSURE_COMPONENT_MAX 1
 /// Maximum coolant-starvation contribution to the void coefficient.
 #define RBMK_VC_COOLANT_COMPONENT_MAX 0.8
