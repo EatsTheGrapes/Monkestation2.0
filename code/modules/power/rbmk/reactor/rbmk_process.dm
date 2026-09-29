@@ -391,10 +391,10 @@
 	var/temperature_coefficient = max(temperature * RBMK_VC_TEMP_COEFF, 0)
 	temperature_coefficient += temperature_ratio * 0.35
 	temperature_coefficient = clamp(temperature_coefficient, 0, RBMK_VC_TEMP_COMPONENT_MAX)
-	var/pressure_ratio = CLAMP01(1 - (pressure / max(RBMK_PRESSURE_WARNING, 1)))
-	var/pressure_coefficient = pressure_ratio * heat_gate * RBMK_VC_PRESSURE_COMPONENT_MAX
-	// Starvation is judged by thermal mass so a full loop of water vapor is not treated like a sparse one.
+	// Coolant thermal mass stands in for void fraction. Raw pressure is not used because heating raises it without adding coolant.
 	var/coolant_thermal_moles = (coolant_internal?.heat_capacity() || 0) / RBMK_COOLANT_REFERENCE_SPECIFIC_HEAT
+	var/coolant_density_ratio = CLAMP01(coolant_thermal_moles / max(RBMK_COOLANT_EFFECTIVE_MOLES_TARGET, 1))
+	var/pressure_coefficient = (1 - coolant_density_ratio) * heat_gate * RBMK_VC_PRESSURE_COMPONENT_MAX
 	var/coolant_ratio = CLAMP01(coolant_thermal_moles / max(RBMK_VC_COOLANT_MOLES_TARGET, 1))
 	var/coolant_coefficient = (1 - coolant_ratio) * heat_gate * RBMK_VC_COOLANT_COMPONENT_MAX
 	void_coefficient = clamp(

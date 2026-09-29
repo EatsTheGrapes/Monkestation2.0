@@ -66,7 +66,7 @@
 		"The RBMK outlet overshot downstream pressure at maximum flow.",
 	)
 	var/inlet_supply_pressure = 2000
-	var/inlet_target_pressure = inlet_supply_pressure + RBMK_INLET_PUMP_HEAD
+	var/inlet_target_pressure = min(inlet_supply_pressure + RBMK_INLET_PUMP_HEAD, RBMK_PRESSURE_WARNING)
 	var/pre_injection_pressure = inlet_target_pressure - 100
 	internal_mix.gases[/datum/gas/nitrogen][MOLES] = (pre_injection_pressure * internal_mix.volume) / (R_IDEAL_GAS_EQUATION * test_temperature)
 	inlet_mix.gases[/datum/gas/nitrogen][MOLES] = (inlet_supply_pressure * inlet_mix.volume) / (R_IDEAL_GAS_EQUATION * test_temperature)

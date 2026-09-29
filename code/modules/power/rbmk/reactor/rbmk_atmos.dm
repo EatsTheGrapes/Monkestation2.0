@@ -65,7 +65,8 @@
 	last_outlet_pressure = internal_pressure
 	var/desired_inlet_moles = 0
 	if(inlet_open && inlet_pipe_mix?.total_moles() > 0)
-		var/inlet_target_pressure = last_inlet_pressure + RBMK_INLET_PUMP_HEAD
+		// The injector never pushes the vessel into its damage range; the outlet regulates pressure.
+		var/inlet_target_pressure = min(last_inlet_pressure + RBMK_INLET_PUMP_HEAD, RBMK_PRESSURE_WARNING)
 		var/inlet_temperature_delta = abs(inlet_pipe_mix.temperature - internal_coolant_mix.temperature)
 		var/inlet_pressure_limited_moles = inlet_pipe_mix.gas_pressure_calculate(
 			internal_coolant_mix,

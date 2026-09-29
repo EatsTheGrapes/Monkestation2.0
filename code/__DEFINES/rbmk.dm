@@ -50,7 +50,7 @@
 #define RBMK_VC_TEMP_COEFF 0.00003
 /// Maximum temperature contribution to the void coefficient.
 #define RBMK_VC_TEMP_COMPONENT_MAX 1.2
-/// Maximum pressure contribution to the void coefficient.
+/// Maximum coolant-density contribution to the void coefficient.
 #define RBMK_VC_PRESSURE_COMPONENT_MAX 1
 /// Maximum coolant-starvation contribution to the void coefficient.
 #define RBMK_VC_COOLANT_COMPONENT_MAX 0.8
@@ -160,7 +160,7 @@
 #define RBMK_INLET_RATE_DEFAULT 75
 /// Maximum inlet flow setting in moles per second.
 #define RBMK_INLET_RATE_MAX 250
-/// Maximum pressure rise the reactor coolant injector can overcome above its supply pressure.
+/// Maximum pressure rise the reactor coolant injector can overcome above its supply pressure, capped at RBMK_PRESSURE_WARNING.
 #define RBMK_INLET_PUMP_HEAD 6500
 /// Minimum outlet flow setting in moles per second.
 #define RBMK_OUTLET_RATE_MIN 0
