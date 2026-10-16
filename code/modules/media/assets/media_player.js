@@ -6,15 +6,18 @@
     (t && (n += `;params=${encodeURIComponent(JSON.stringify(t))}`),
       (window.location.href = n));
   }
-  function o(e) {
+  function o(e, notify = true) {
+    const request = active_request;
     (e && console.debug("full_clear:", e),
+      clearTimeout(load_timeout),
       audio?.unload(),
       (audio = null),
+      (active_request = null),
       (sent_playing = !1),
       (load_time = null),
       (start_time = null),
       (offset = 0),
-      cleared || (n("clear"), (cleared = !0)));
+      cleared || (notify && n("clear", request), (cleared = !0)));
   }
   (!(function () {
     "use strict";
@@ -1813,13 +1816,16 @@
             e._paused || e._parent.pause(e._id, !0).play(e._id, !0));
         };
     })(),
+    (active_request = null),
+    (load_timeout = null),
     (audio = null),
     (load_time = null),
     (start_time = null),
     (offset = 0),
     (cleared = !1),
     (sent_playing = !1),
-    (window.play = (t, r, i, a = 0, s = 0, u = 0, d = 0) => {
+    (window.play = (t, r, i, a = 0, s = 0, u = 0, d = 0, token = 0) => {
+      clearTimeout(load_timeout);
       audio &&
         (audio.unload(),
         (audio = null),
@@ -1827,7 +1833,18 @@
         (load_time = null),
         (start_time = null),
         (offset = 0));
+      active_request = { url: t, token };
+      cleared = false;
       try {
+        let failed = false;
+        const failLoad = reason => {
+          if (failed || window.audio !== _) return;
+          failed = true;
+          // One navigation: clear locally without sending a second Topic
+          // which could replace the failure message before it is delivered.
+          o(reason, false);
+          n("load_error", { url: t, token, reason });
+        };
         let _ = (window.audio = new e({
             src: [t],
             volume: r ? r / 100 : 1,
@@ -1835,9 +1852,11 @@
             preload: !0,
             format: i,
             onplay: () => {
+              if (window.audio !== _) return;
+              clearTimeout(load_timeout);
               ((start_time = Date.now()),
                 (cleared = !1),
-                sent_playing || ((sent_playing = !0), n("playing", { url: t })),
+                sent_playing || ((sent_playing = !0), n("playing", { url: t, token })),
                 null !== load_time &&
                   (offset = 2 * Math.ceil((start_time - load_time) / 1e3)),
                 console.debug(`--- onplay ---
@@ -1845,9 +1864,10 @@ start_time=${start_time}
 load_time=${load_time}
 offset=${offset}`));
             },
-            onend: () => o("onend"),
-            onloaderror: () => o("onloaderror"),
-            onplayerror: () => o("onplayerror"),
+            onend: () => { if (window.audio === _) o("onend"); },
+            onloaderror: () => failLoad("load_error"),
+            // Autoplay/gesture rejection is not evidence of a bad song.
+            onplayerror: () => { if (window.audio === _) o("onplayerror"); },
           })),
           l = _._sounds;
         if (l)
@@ -1855,6 +1875,7 @@ offset=${offset}`));
             let t = e._node;
             t && (t.crossOrigin = "anonymous");
           }
+        load_timeout = setTimeout(() => failLoad("timeout"), 15000);
         ((load_time = Date.now()), _.pos(a, s, u), _.stereo(d), _.play());
       } catch (e) {
         (console.error("Failed to play audio", e), stop());
@@ -1864,6 +1885,7 @@ offset=${offset}`));
       o("stop");
     }),
     (window.pause = () => {
+      clearTimeout(load_timeout);
       audio?.pause();
     }),
     (window.set_volume = (e) => {

@@ -35,6 +35,15 @@
 	VAR_PRIVATE/last_balance
 	/// Callbacks to run when we get the "ready" message back fron the media manager.
 	VAR_PRIVATE/list/ready_callbacks
+	/// Generation of the current browser play request; rejects stale callbacks.
+	VAR_FINAL/play_token = 0
+	VAR_FINAL/load_failure_suspended = FALSE
+	/// Failed lobby URLs and fallback selection belong to this client only.
+	var/list/failed_lobby_urls
+	var/lobby_load_failures = 0
+	/// Fixed candidate pool for this retry chain, consumed before every try.
+	var/list/lobby_fallback_candidates
+	var/datum/media_track/lobby_track_override
 	var/static/base_html
 
 /datum/media_player/New(client/owner)
@@ -64,6 +73,9 @@
 
 /datum/media_player/proc/close()
 	ready = FALSE
+	play_token++
+	on_clear()
+	LAZYNULL(ready_callbacks)
 	if(!isnull(owner))
 		owner << browse(null, "window=" + MEDIA_WINDOW_ID)
 
@@ -119,18 +131,25 @@
 	if(url == loading_url)
 		return
 	loading_url = url
+	load_failure_suspended = FALSE
 	last_x = x
 	last_y = y
 	last_z = z
 	last_volume = volume
 	last_balance = balance
-	media_call("play", url, volume, null, x, y, z, balance)
+	play_token++
+	media_call("play", url, volume, null, x, y, z, balance, play_token)
 
 /datum/media_player/proc/pause()
+	load_failure_suspended = TRUE
 	media_call("pause")
 
 /datum/media_player/proc/stop()
-	if(isnull(loading_url) && !isnull(current_url))
+	var/had_request = loading_url || current_url
+	play_token++
+	on_clear()
+	LAZYNULL(ready_callbacks)
+	if(had_request)
 		media_call("stop")
 
 /datum/media_player/proc/on_ready()
@@ -138,7 +157,8 @@
 		CRASH("readied twice")
 	if(QDELETED(src) || isnull(owner))
 		return
-	on_clear()
+	// close() already reset the old document. Preserve a play request queued
+	// before readiness so its URL/token still validate when callbacks arrive.
 	ready = TRUE
 	MM2_DEBUG("ready for [key_name(owner)]")
 	for(var/datum/callback/callback as anything in ready_callbacks)
@@ -146,6 +166,7 @@
 	LAZYNULL(ready_callbacks)
 
 /datum/media_player/proc/on_clear()
+	load_failure_suspended = FALSE
 	current_url = null
 	loading_url = null
 	last_volume = null
@@ -166,10 +187,31 @@
 		if("ready")
 			on_ready()
 		if("clear")
+			var/clear_token = istext(params["token"]) ? text2num(params["token"]) : params["token"]
+			if(isnull(owner) || usr != owner.mob || clear_token != play_token || (params["url"] != loading_url && params["url"] != current_url))
+				return
 			on_clear()
 		if("playing")
+			var/playing_token = istext(params["token"]) ? text2num(params["token"]) : params["token"]
+			if(isnull(owner) || usr != owner.mob || playing_token != play_token || params["url"] != loading_url)
+				return
 			current_url = params["url"]
 			loading_url = null
+		if("load_error")
+			if(load_failure_suspended)
+				return
+			if(isnull(owner) || usr != owner.mob)
+				return
+			var/token = istext(params["token"]) ? text2num(params["token"]) : params["token"]
+			var/failed_url = params["url"]
+			if(!istext(failed_url) || token != play_token || failed_url != loading_url)
+				return
+			var/mob/listener = owner?.mob
+			if(listener?.current_media_source != GLOB.lobby_media)
+				on_clear()
+				return
+			on_clear()
+			GLOB.lobby_media.retry_failed_track(listener, src, failed_url)
 		if("error")
 			MM2_DEBUG("error: [params["message"]]")
 			stack_trace(params["message"])
