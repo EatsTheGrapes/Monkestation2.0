@@ -249,6 +249,11 @@ config/dbconfig.txt
 # Running OpenDream locally
 tgstation.json
 rust_g64.dll
+dreamluau64.dll
+
+# Local Dream64 compiled worlds and replay captures
+*.d64
+*.d64r
 
 #ableton sound analysis files
 *.asd
